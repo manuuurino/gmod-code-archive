@@ -1,0 +1,174 @@
+--@name Camerrino Alpha 0.0
+--@shared
+--@include ../../lib/draw/kewlrenderi.txt
+
+local kRender = require("../../lib/draw/kewlrenderi.txt")
+
+local me = owner()
+local ply = player()
+
+local isOwner = me == ply
+
+// models
+local MODELS = {
+    // GMod Props
+    GMOD_CAMERA = "models/dav0r/camera.mdl",
+    GMOD_DSRL = "models/maxofs2d/camera.mdl",
+    
+    LIGHT_DIR = "models/lamps/torch.mdl",
+    LIGHT_FLASHLIGHT = "models/maxofs2d/lamp_flashlight.mdl",
+    LIGHT_POINT = "models/xqm/rails/gumball_1.mdl",
+    
+    FOV = "models/hunter/misc/squarecap1x1x1.mdl",
+    
+    MESH_FOV_FN = function()
+        return mesh.createFromTable()
+    end,
+}
+
+local M_CAM = MODELS.GMOD_DSRL
+local M_FOV = MODELS.FOV
+
+local function IsValid(ent)
+    return ent and isValid(ent)
+end
+
+if SERVER then
+    local screen, hud
+    
+    do
+        local distScreen, distHud = math.huge, math.huge
+        local dist = function(v) return chip():getPos():getDistanceSqr(v:getPos()) end
+        
+        for k, v in pairs(find.all()) do
+            if not IsValid(v) then continue end
+            if v:getOwner() ~= me then continue end
+            
+            if v:getClass() == "starfall_screen" and dist(v) < distScreen then
+                screen = v
+                continue
+            end
+            
+            if v:getClass() == "starfall_hud" and dist(v) < distHud then
+                hud = v
+                continue
+            end
+        end
+    end
+    
+    screen:linkComponent(chip())
+    hud:linkComponent(chip())
+
+    net.receive("CreateProp", function(len, ply)
+        if IsValid(ply) and ply ~= owner() then return end
+        
+        local pos, ang, model, freeze, _type =
+            net.readVector(),
+            net.readAngle(),
+            net.readString(),
+            net.readBool(),
+            net.readString()
+    
+        local ent = prop.create(pos, ang, model, freeze)
+        
+        net.start("CreateProp")
+            net.writeString(_type)
+            net.writeUInt(ent:entIndex(), 16)
+        net.send()
+    end)
+end
+
+if CLIENT and isOwner then
+    local ENTITYS = {}
+    
+    local H_FOV = holograms.create(Vector(), Angle(), M_FOV, Vector(1, 1, 1)):setMesh()
+    
+    local aa = 0
+    local ENT_FUNC = {
+        ["CAM"] = {
+            hud = function(ent)
+                local ts = ent:getPos():toScreen()
+                render.setColor(Color(0, 255, 0, 255))
+                render.drawRect(200, 200, 200, 200)
+                
+                render.setColor(Color(255, 50, 50))
+                aa = (aa + 0.5) % 360
+                kRender.drawCircle(300, 300, 100, 32, aa)
+            end,
+            holo = function(ent)
+                render.setColor(Color(255, 255, 255, 255))
+                render.draw3DQuad(
+                    ent:getPos(),
+                    ent:getPos() + Vector(100, 0, 100),                    
+                    ent:getPos() + Vector(-100, 0, 100),                    
+                    ent:getPos()
+                )
+            
+                /*
+                local wp, wa = localToWorld(H_FOV:obbMaxs(), Angle(-90, 0, 0), ent:getPos(), ent:getAngles())
+                H_FOV:setPos(wp)
+                H_FOV:setAngles(wa)*/
+            end
+        }
+    }
+    
+    net.receive("CreateProp", function(len, ply)
+        ENTITYS[net.readString()] = net.readUInt(16)
+    end)
+    
+    local function checkQuota(n)
+        return quotaAverage() < quotaMax() * n
+    end
+
+    if ply ==  me then
+        local function createProp(_type, pos, ang, model, freeze)
+            net.start("CreateProp")
+                net.writeVector(pos)
+                net.writeAngle(ang)
+                net.writeString(model)
+                net.writeBool(freeze)
+                net.writeString(_type)
+            net.send()
+        end
+        
+        net.receive("CreateProp", function(len, ply)
+            local _type = net.readString()
+            local ent = net.readUInt(16)
+            ENTITYS[_type] = ent
+            print("Recived a Entity! Stored in \"" .. _type .. '"')
+        end)
+        
+        createProp(
+            "CAM",
+            chip():getPos() + Vector(0, 0, 20),
+            Angle(0, 0, 0),
+            M_CAM,
+            true
+        )
+    end
+    
+    local function update(hookType)
+        for key, ent in pairs(ENTITYS) do
+            if not IsValid(entity(ent)) then continue end
+            if not ENT_FUNC[key][hookType] then continue end
+            ENT_FUNC[key][hookType](entity(ent))
+        end
+    end
+    
+    /*while checkQuota(0.5) do
+        i = i + 1
+    end*/
+    
+    hook.add("think", "update", function()
+        update("update")
+    end)
+    
+    local i = 0
+    hook.add("render", "draw", function()
+        update("draw")
+    end)
+    
+    hook.add("drawhud", "hud", function()
+        update("hud")
+    end)
+end

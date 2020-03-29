@@ -1,0 +1,45 @@
+--@name Fractal Tree
+--@author
+--@shared
+
+if SERVER then
+    chip():isWeldedTo():linkComponent(chip())
+end
+
+if CLIENT then
+    local function grow(maxDeep, ang, x, y, len, lenMul, deep, curAng)
+        deep = deep or 0
+        curAng = curAng or 0
+        if deep > maxDeep then return end
+        
+        render.setColor(Color(360 / maxDeep * deep, 0.7, 1):hsvToRGB())
+        
+        local newX, newY = 
+            x + math.cos(math.rad(curAng - 90)) * len,
+            y + math.sin(math.rad(curAng - 90)) * len
+        render.drawLine(x, y, newX, newY)
+        
+        grow(maxDeep, ang, newX, newY, len * lenMul, lenMul, deep + 1, curAng - ang)
+        grow(maxDeep, ang, newX, newY, len * lenMul, lenMul, deep + 1, curAng + ang)
+    end
+    
+    local rt = material.create("UnlitGeneric")
+    render.createRenderTarget("canvas")
+
+    local i = 0
+    hook.add("render", "tree", function()
+        render.setMaterial(nil)
+        render.selectRenderTarget("canvas")
+            render.setColor(Color(0, 0, 0, 50))
+            render.drawRect(0, 0, 512, 512)
+            
+            i = (i + 0.5) % 60
+            grow(6, i, 256, 512 - 64, 128, 0.7)
+        render.selectRenderTarget(nil)
+        
+        rt:setTextureRenderTarget("$baseTexture", "canvas")
+        render.setMaterial(rt)
+        render.setColor(Color(255, 255, 255, 255))
+        render.drawTexturedRectFast(0, 0, 1024, 1024)
+    end)
+end

@@ -1,0 +1,161 @@
+local systime = timer.systime
+local curtime = timer.curtime
+local realtime = timer.realtime
+
+local render = render
+local material = material
+
+local PI = math.pi
+local TAU = PI * 2
+
+local kRender = {}
+local getTime = curtime
+
+function kRender.drawPixel(x, y, col)
+    if col then
+        render.setColor(col)
+    end
+    render.drawRectFast(x, y, 1, 1)
+end
+
+local function calcCircle(x, y, r, seg, pie, ang)
+    local circ = {}
+        
+    for i = 0, seg, 1 do
+        local rad = math.rad(ang + pie / seg * i)
+        circ[#circ + 1] = {
+            x = x + math.cos(rad) * r,
+            y = y + math.sin(rad) * r
+        }
+    end
+    
+    circ[#circ + 1] = {
+        x = x,
+        y = y
+    }
+    
+    return circ
+end
+
+function kRender.drawCircle(x, y, r, seg, pie, rotate)
+    r = math.abs(r)
+    seg = math.max(seg or 32, 3)
+    pie = math.min(math.max(pie or 360, 0), 360)
+    rotate = rotate or 0
+    
+    if pie < 360 then
+        render.drawPoly(calcCircle(x, y, r, seg, math.min(pie, 180), rotate))
+        if pie > 180 then
+            render.drawPoly(calcCircle(x, y, r, seg, pie - 180, rotate + 180))
+        end
+    else
+        render.drawPoly(calcCircle(x, y, r, seg, pie, rotate))
+    end
+end
+
+function kRender.drawHollowCircle(x, y, r, r2, seg, pie, rotate)
+    r = math.abs(r)
+    r2 = math.abs(r2)
+    seg = math.max(seg or 32, 3)
+    pie = math.min(math.max(pie or 1, 0), 1)
+    rotate = math.rad(rotate or 0)
+
+    local circ = {}
+        
+    for i = 0, pie, 1 / seg do
+        circ[#circ + 1] = {
+            x = x + math.cos(TAU * i + rotate) * r,
+            y = y + math.sin(TAU * i + rotate) * r
+        }
+    end
+end
+
+function kRender.init()
+    render.createRenderTarget("canvas")
+    
+    return 1024, 1024
+end
+
+local dt, fps, t, lt = 0, 0, getTime(), getTime()
+function kRender.update()
+    if t == getTime() then return end
+    
+    lt = t
+    t = getTime()
+    dt = t - lt
+end
+
+function kRender.draw(fn)
+    return function()
+        lt = t
+        t = getTime()
+        dt = t - lt
+        fps = 1 / dt
+        
+        render.selectRenderTarget("canvas")
+            fn(dt, fps, t, lt)
+        render.selectRenderTarget(nil)
+        
+        render.setRenderTargetTexture("canvas")
+        render.setColor(Color(255, 255, 255, 255))
+        render.drawTexturedRect(0, 0, 512, 512)
+        render.setRenderTargetTexture(nil)
+    end
+end
+
+function kRender.drawUntil(quotaLimit, fn)
+    while not fn() and quotaAverage() < quotaMax() * quotaLimit do end
+end
+
+function kRender.renderPixels(quotaLimit, loop, whileFn, endFn, startWidth, endWidth, startHeight, endHeight)
+    startWidth, endWidth = 0, 1024 - 1
+    startHeight, endHeight = 0, 1024 - 1
+    
+    local x, y = startWidth, startHeight
+    local finished = false
+    
+    endFn = endFn or (function() end)
+    
+    return function()
+        if finished then return true end
+        kRender.drawUntil(quotaLimit, function()
+            whileFn(x, y)
+            
+            x = x + 1
+            if x >= endWidth then
+                x = startWidth
+                y = y + 1
+                
+                if y >= endHeight then
+                    y = startHeight
+                    
+                    endFn()
+                    
+                    if not loop then
+                        finished = true
+                        return true
+                    end
+                end
+            end
+        end)
+    end
+end
+
+return kRender
+
+--[[
+local function drawHollowCircle(x, y, radius, thick, seg, proc, rotate)
+    for i = 0, seg - 1 do
+        local tmp = {}
+        for a = 0, 1 do
+            for b = 0, 1 do
+                local rad = math.rad(rotate + proc / seg * (i + 1 * math.abs(b - a)))
+                table.insert(tmp, {
+                    x = x + math.cos(rad) * (radius + thick / 2 - thick * a),
+                    y = y + math.sin(rad) * (radius + thick / 2 - thick * a),
+                })
+            end
+        end
+        surface.DrawPoly(tmp)
+    end
+end --]]

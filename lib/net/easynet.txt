@@ -1,0 +1,31 @@
+local eNet = {}
+
+local protocalls = {
+    ["prop"] = {
+        receive = function(len, ply)
+            local
+                pos = net.readVector(),
+                ang = net.readAngle(),
+                model = net.readString(),
+                freeze = net.readBool()
+        
+            local ent = prop.create(
+                
+            )
+        end,
+    },
+}
+
+function eNet.CreateProp(pos, ang, model, freeze)
+    local ent = prop.create(pos, ang, model, freeze)
+end
+
+function eNet.Receive()
+    
+end
+
+function eNet.Check()
+    for k, v in pairs(protocalls) do
+        net.receive(k, v.receive)
+    end
+end

@@ -1,0 +1,41 @@
+--@client
+
+function load()
+    -- Do shit here
+end
+
+local perms = {
+    "render.screen",
+    "bass.loadURL",
+    "sound.create",
+    "sound.modify"
+}
+
+local has = true
+for _, perm in pairs(perms) do
+    if not hasPermission(perm) then
+        has = false
+        break
+    end
+end
+
+if has then
+    load()
+else
+    setupPermissionRequest(perms, "Gimmi Gimmi", true)
+    
+    if hasPermission("render.screen") then
+        hook.add("render", "perms", function()
+            render.drawSimpleText(256, 256, "Cyka press E", 1, 1)
+        end)
+    end
+    
+    hook.add("permissionrequest", "perms", function()
+        if permissionRequestSatisfied() then
+            hook.remove("permissionrequest", "perms")
+            hook.remove("render", "perms")
+            
+            load()
+        end
+    end)
+end

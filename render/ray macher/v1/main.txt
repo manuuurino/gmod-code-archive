@@ -1,0 +1,110 @@
+--@name
+--@shared
+--@include ../../../lib/link/kewllink.txt
+--include ../../../lib/draw/kewlrenderi.txt
+--@include ../../../lib/draw/kewlcustomrenderi.txt
+--@include ../../../lib/permissions/kewlpermissions.txt
+
+local kLink = require("../../../lib/link/kewllink.txt")
+--local kRender = require("../../../lib/draw/kewlrenderi.txt")
+local kcRender = require("../../../lib/draw/kewlcustomrenderi.txt")()
+local kPerm = require("../../../lib/permissions/kewlpermissions.txt")
+
+if SERVER then
+    kLink.init()
+    kLink.link()
+end
+
+if CLIENT and owner() == player() then
+    kPerm.askPerms("Ray Marscher",
+        {
+            "render.screen",
+            "material.create"
+        },
+        function()
+            local WIDTH, HEIGHT = kcRender.init(512, 512)
+            local rtSizeW, rtSizeH = kcRender.getRTScreenSize()
+            
+            local maxIterations = 250
+            local cenX, cenY = 0.3750001200618655, -0.2166393884377127
+            local size = 0.0002
+            local minX, maxX, minY, maxY = cenX - size, cenX + size, cenY - size, cenY + size
+            local miX, mxX, miY, mxY
+            function remap( x, t1, t2, s1, s2 )
+                local f = ( x - t1 ) / ( t2 - t1 )
+                local g = f * ( s2 - s1 ) + s1
+                return g;
+            end
+            function drawMandelbrot(i, j)
+                local pa, as, za, b, bs, zb, cnt, clr = {}
+                a = remap( i, 0, WIDTH, minX, maxX )
+                b = remap( j, 0, HEIGHT, minY, maxY )
+                cnt = 0; za = a; zb = b
+                while( cnt < maxIterations ) do
+                    as = a * a - b * b; bs = 2 * a * b
+                    a = za + as; b = zb + bs
+                    if math.abs( a ) + math.abs( b ) > 16 then break end
+                    cnt = cnt + 1
+                end
+                if cnt == maxIterations then clr = 0
+                else clr = remap( cnt, 0, maxIterations, 0, 255 )
+                end
+                return clr, clr, clr, 255
+            end
+            
+            local renderPixels = kcRender.pixels(0.35, true,
+                function(x, y, pixel)
+                    --if (x + y) % 2 == 0 then return end
+                    --if x % 2 == 0 and y % 2 == 0 then return end
+                    --kcRender.drawPixel(x, y, Color(360 / (WIDTH + HEIGHT) * (x + y), 1, 1):hsvToRGB())
+                    --kcRender.drawPixel(x, y, Color(360 / WIDTH * x, 1, 1):hsvToRGB())
+                    --kcRender.drawPixel(x, y, Color(360 / HEIGHT * y, 1, 1):hsvToRGB())
+                    --kcRender.drawPixelFastRGBA(x, y, 255, 255, 255, 255)
+                    kcRender.drawPixelFastRGBA(x, y, 255 * x / WIDTH, 255 * y / HEIGHT, 255, 255)
+                    --local r, g, b, a = drawMandelbrot(x, y)
+                    kcRender.drawPixelFastRGBA(x, y, drawMandelbrot(x, y))
+                end,
+                function()
+                    print("finished!")
+                end)
+            
+            print("Sizes", WIDTH, HEIGHT, rtSizeW, rtSizeH)
+            hook.add("render", "scr", kcRender.setup(function(dt, t, scrX, scrY)
+                if renderPixels(scrX, scrY) then return end
+                --kcRender.drawPixelFastRGBA(751, 0, 255, 255, 255, 255)
+            end))
+        end,
+        kPerm.drawPendingFloatingKey
+    )
+end
+
+--[[
+local WIDTH, HEIGHT = kcRender.init(1500, 1500)
+
+
+
+local renderPixels = kcRender.renderPixels(0.01, false,
+    function(x, y)
+        --if x % 2 == 0 and y % 2 == 0 then return end
+        --kRender.drawPixel(x, y, Color(255 * x / WIDTH, 255 * y / HEIGHT, 0, 255))
+        --kRender.drawPixel(x, y, Color((x + y) % 360, 1, 1):hsvToRGB())
+        --print(x + y * WIDTH / 2)
+        kRender.drawPixel(x, y, Color(360 / (WIDTH + HEIGHT) * (x + y), 1, 1):hsvToRGB())
+        --kRender.drawPixel(x, y, Color(255, 255, 255, 255))
+        --kRender.drawPixel(x, y, Color(math.random(0, 255), math.random(0, 255), math.random(0, 255), 255))
+        --kRender.drawPixel(x, y, (x == 0 or y == 0 or x == WIDTH - 1 or y == HEIGHT - 1) and Color(255, 255, 255, 255) or Color(255, 0, 0, 255))
+        --
+    end,
+    function(id)
+        print("finished: " .. id)
+    end)
+
+print(WIDTH, HEIGHT)
+hook.add("render", "scr", kcRender.draw(function(dt, t, scrHX, scrHY)
+    if renderPixels(scrHX, scrHY) then return end
+    --[[render.setColor(Color(255, 255, 255, 255))
+    render.drawRect(0, 0, WIDTH, HEIGHT)
+    render.setColor(Color(0, 20, 0, 255))
+    render.drawRect(1, 1, WIDTH - 2, HEIGHT - 2)--]
+end))
+]]

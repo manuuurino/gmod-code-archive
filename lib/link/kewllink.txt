@@ -1,0 +1,59 @@
+local kLink = {
+    screens = {},
+    huds = {}
+}
+
+function kLink.init(sort)
+    sort = sort == nil and true or sort
+    
+    for k, v in pairs(find.all()) do
+        if not (v and isValid(v)) then continue end
+        if v:getOwner() ~= owner() then continue end
+        local c = v:getClass()
+        
+        if c == "starfall_screen" then
+            kLink.screens[#kLink.screens + 1] = v
+            continue
+        end
+        
+        if c == "starfall_hud" then
+            kLink.huds[#kLink.huds + 1] = v
+            continue
+        end
+    end
+    
+    if not sort then return end
+    
+    local dist = function(e) return chip():getPos():getDistanceSqr(e:getPos()) end
+    table.sort(kLink.screens, function(a, b)
+        return dist(a) < dist(b)
+    end)
+    
+    table.sort(kLink.huds, function(a, b)
+        return dist(a) < dist(b)
+    end)
+end
+
+function kLink.link(fn)
+    fn = fn or (function(totalInd, scr, hud, ent, tableInd)
+        return totalInd == 1
+    end)
+    
+    local c = 0
+    
+    for k, v in pairs(kLink.screens) do
+        c = c + 1    
+        if fn(c, true, false, v, k) then
+            v:linkComponent(chip())
+        end
+    end
+    
+    for k, v in pairs(kLink.huds) do
+        c = c + 1
+        if fn(c, false, true, v, k) then
+            v:linkComponent(chip())
+        end
+    end
+end
+
+return kLink

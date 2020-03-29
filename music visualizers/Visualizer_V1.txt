@@ -1,0 +1,502 @@
+--@name Visualizer V1 (FRIST SF PRJ, VERY BUGGY AND UNOPTIMITZED)
+--@author 
+--@shared
+--model models/props_lab/citizenradio.mdl
+
+--[[
+#####Radio:
+Best - http://air.radiorecord.ru:8102/club_320
+
+#####Bass:
+Mixtape - https://my.mixtape.moe/zwegtr.mp3
+PPAP Remix - https://www.dropbox.com/s/iww25qrelic6oue/PPAPREMIX.mp3?raw=1
+Remix R&B - https://my.mixtape.moe/zhrqsn.mp3
+
+#####Chill:
+Mixtape - https://my.mixtape.moe/ogstnm.mp3
+Mixtape - https://my.mixtape.moe/jfucvz.mp3
+Mixtape - https://my.mixtape.moe/avdllm.mp3
+Mixtape - https://my.mixtape.moe/qtptmf.mp3
+https://my.mixtape.moe/nwelar.mp3
+
+#####House:
+Mixtape - https://my.mixtape.moe/mkdgxp.mp3
+HOT Mixtape - https://my.mixtape.moe/eqokrl.mp3
+
+#####Festival:
+Mixtape - https://files.catbox.moe/2s6y9u.mp3
+
+#####Earrape:
+https://www.dropbox.com/s/mzfjgtdzidjzb48/EAARRAPE.mp3?raw=1
+
+--]]
+
+local render = render
+render.getTextureID = function() return nil end
+render.setTexture = function() end
+
+--### Texture
+local musicURL = "http://air.radiorecord.ru:8102/club_320"-- "https://my.mixtape.moe/eqokrl.mp3"
+local logo = render.getTextureID("http://i.imgur.com/91Yz39I.png")--https://my.mixtape.moe/kozhpj.png
+local gear = render.getTextureID("http://i.imgur.com/IvLqQ2w.png")
+local unmute = render.getTextureID("http://i.imgur.com/ArDggqU.png")
+local mute = render.getTextureID("http://i.imgur.com/ocHth7V.png")
+local Pic = {
+    { tex = render.getTextureID("http://i.imgur.com/iLRjFRf.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/mQFRW1h.jpg") },
+    
+    { tex = render.getTextureID("http://i.imgur.com/DbIIGEX.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/myWBcGD.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/4VBzmAK.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/EzSiukx.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/SohBHyx.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/Qem4jO7.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/8SsXwCb.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/BT7MZqO.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/X6Rtsuq.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/1zrtr32.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/KtTGpCV.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/RIDeggx.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/caohir.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/xxgrrk.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/ghmnjb.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/dpsecd.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/hlvbhv.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/jkkyfr.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/cxrdxx.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/hnoozn.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/flttqo.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/euduct.jpg") },
+        
+    { tex = render.getTextureID("http://i.imgur.com/RdG9L9Q.jpg") },
+    { btex = render.getTextureID("http://i.imgur.com/n1rUXHp.jpg") }
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/atruoq.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/jujbao.jpg") },
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/icvspe.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/fwffal.jpg") }
+        
+    --{ tex = render.getTextureID("https://my.mixtape.moe/nvlnil.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/niypub.jpg") },
+    
+    --{ tex = render.getTextureID("https://my.mixtape.moe/wickmq.jpg") },
+    --{ btex = render.getTextureID("https://my.mixtape.moe/igtqqn.jpg") }
+}
+
+--### Some Settings
+local sound
+local MuteStat = mute
+local offscale = 128
+local counter = 0
+local Dist = 500
+local Setting = 0
+local BGCounter = 1
+local BGDelay = 1000
+local BGAvalibe = #Pic/2
+local BGCount = math.round(math.random(1,BGAvalibe))
+local PrevBG = math.clamp(BGCount-1,1,BGAvalibe)
+local Alpha = 0
+
+local Qualtiy = {
+    { -- Low
+        Stars = 150,
+        Spikes = 64,
+        Lights = 128,
+        Vis = 128,
+        Seg = 32
+    },
+    { -- Mid
+        Stars = 200,
+        Spikes = 128,
+        Lights = 256,
+        Vis = 128,
+        Seg = 32
+    },
+    { -- High
+        Stars = 600,
+        Spikes = 128,
+        Lights = 256,
+        Vis = 256,
+        Seg = 64
+    }
+}
+
+--### Load Song
+bass.loadURL(musicURL, "mono", function(snd, err, errtxt)
+    if snd then
+        snd:setLooping(false)
+        snd:setVolume(1)
+        
+        sound = snd
+        
+        hook.add("think", "sound", function()
+            if sound then
+                dist = chip():getPos():getDistance(player():getPos())
+                if MuteStat == unmute then
+                    if dist < Dist then
+                        if dist < Dist then
+                            sound:setVolume(1)
+                        else
+                            sound:setVolume(math.clamp(Dist-dist*2,0,1))
+                        end
+                    else
+                        sound:setVolume(0)
+                    end
+                else
+                    sound:setVolume(0)
+                end
+            end
+        end)
+    else
+        print("ERROR: " .. errtxt)
+    end
+end)
+
+--### STARS
+local stars = {}
+local Amt = Qualtiy[3].Stars
+local w = 128
+local h = 128
+local DScale = 250
+local RS = 1.25
+local Lock_speed = 0.2
+local mSize = 6
+
+for i = 0, Amt do
+    stars[i] = {
+        x = math.random(-w, w),
+        y = math.random(-h, h),
+        z = math.random(0, w),
+        DX = math.random(-DScale, DScale),
+        DY = math.random(-DScale, DScale),
+    }
+end
+
+--### Touch
+hook.add( "KeyPress", "Settings Use", function( ply, key )
+    
+    local x 
+    local y
+    x,y = render.cursorPos(player())
+        
+    if not x then x = 0 end
+    if not y then y = 0 end
+    
+    cur = {
+        x = x,
+        y = y
+    }
+    
+    if Setting == 0 then
+        if player():keyDown(IN_KEY.USE) then
+            if (cur.x > 256 - 256/2) and (cur.x < 256 + 256/2) then
+                if cur.y > 256-64-16 - 64/2 && cur.y < 256-64-16 + 64/2 then
+                    Setting = 1
+                elseif cur.y > 256 - 64/2 && cur.y < 256 + 64/2 then
+                    Setting = 2
+                elseif cur.y > 256+64+16 - 64/2 && cur.y < 256+64+16 + 64/2 then
+                    Setting = 3
+                end
+            end
+        end
+    else
+        if player():keyDown(IN_KEY.USE) && first then
+            if cur.y > 0  && cur.y < 32 then
+                if cur.x > 0 && cur.x < 32 then
+                    Setting = 0
+                elseif cur.x > 32 && cur.x < 64 then
+                    if MuteStat == unmute then
+                        MuteStat = mute
+                    elseif MuteStat == mute then
+                        MuteStat = unmute
+                    end
+                end
+            end
+            first = false
+        else
+            first = true
+        end
+    end
+end )
+
+
+--### Render
+local chill = 0
+hook.add("render", "visuals", function()
+    if quotaAverage()/quotaMax()*100 > 92 and chill > 100 then
+        Setting = Setting - 1
+        chill = 0
+    end
+    chill = chill + 1
+    
+    if Setting == 0 then
+        for i = 0, 2 do
+            render.drawTexturedRectRotated(256, 256-64-16+(64+16)*i, 256, 64, 0)
+        end
+        
+        render.setColor(Color(0,0,0))
+        render.setFont("Trebuchet24") 
+        render.drawSimpleText(256, 256-64-16, "Low", 1, 1)
+        render.drawSimpleText(256, 256, "Medium", 1, 1)
+        render.drawSimpleText(256, 256-64-16+(64+16)*2, "High", 1, 1)
+        
+        render.setColor(Color(255,255,255))
+        render.setFont("Trebuchet24") 
+        render.drawSimpleText(256, 256-128-64, "Qualtiy Settings : ", 1, 1)
+        render.setFont("Trebuchet24") 
+        render.drawSimpleText(256, 256-128-64+16+8, "Manuuu's Visualizer V1", 1, 1)
+        render.drawSimpleText(256, 256-128-64+16*2+16, "First SF Project and Visualizer.", 1, 1)
+        
+        render.setColor(Color(255,40,40))
+        render.setFont("Trebuchet24") 
+        render.drawSimpleText(256, 256+128+64, "Note! >>> Good CPU needed.", 1, 1)
+        render.setFont("Trebuchet24")
+        render.drawSimpleText(256, 256+128+64+32, "Sometimes you get in the Settings so you avoid a crash.", 1, 1)
+    end
+    if Setting != 0 then
+        if sound  and quotaAverage()/quotaMax()*100 < 93 then
+            --### FFT Settings
+            local fft = sound:getFFT(5)
+            
+            local range = 16
+            scl = 0
+            local sclmul = 2
+            local shake = 16
+            local ang = 5
+            --
+            for i = 1, range do
+                if fft[i] > 0.01 then
+                    scl = scl + fft[i]
+                end
+            end
+            
+            scl = scl/range
+            
+            --### Background
+            if offscale < 512*scl*sclmul then
+                offscale = 512*scl*sclmul
+            else
+                if offscale > 128 then
+                    offscale = offscale - 0.05
+                end
+            end
+            
+            counter = counter-scl/2-0.01
+            
+            BGCounter = BGCounter + 1
+            if BGCounter > BGDelay then
+                PrevBG = BGCount
+                PrevCall = BGCount
+                BGCount = BGCount + 1
+                if BGCount > BGAvalibe then
+                    BGCount = 1
+                end
+                BGCounter = 0
+            end
+            
+            if BGCount != PrevCall then
+                PrevCall = BGCount
+                Alpha = 0
+            end
+            
+            Alpha = Alpha + 5
+            
+            render.setTexture(Pic[BGCount*2-1].tex)
+            render.setColor(Color(255,255,255,255))
+            render.drawTexturedRectRotated(256+math.random(-shake,shake)*scl, 256+math.random(-shake,shake)*scl, 512 - 512*scl*sclmul + offscale, 512 - 512*scl*sclmul + offscale, math.random(-ang,ang)*scl)
+            render.setTexture(Pic[BGCount*2].btex)
+            render.setColor(Color(255,255,255,255*scl*10))
+            render.drawTexturedRectRotated(256+math.random(-shake,shake)*scl, 256+math.random(-shake,shake)*scl, 512 - 512*scl*sclmul + offscale, 512 - 512*scl*sclmul + offscale, math.random(-ang,ang)*scl)
+            --### Background Transistion
+            if Alpha < 255 then
+                render.setTexture(Pic[PrevBG*2-1].tex)
+                render.setColor(Color(255,255,255,math.clamp(255-Alpha,0,255)))
+                render.drawTexturedRectRotated(256+math.random(-shake,shake)*scl, 256+math.random(-shake,shake)*scl, 512 - 512*scl*sclmul + offscale, 512 - 512*scl*sclmul + offscale, math.random(-ang,ang)*scl)
+                render.setTexture(Pic[PrevBG*2].btex)
+                render.setColor(Color(255,255,255,math.clamp(255*scl*10-Alpha,0,255)))
+                render.drawTexturedRectRotated(256+math.random(-shake,shake)*scl, 256+math.random(-shake,shake)*scl, 512 - 512*scl*sclmul + offscale, 512 - 512*scl*sclmul + offscale, math.random(-ang,ang)*scl)
+            end
+            
+            --### Stars
+            render.setTexture()
+            local strength = 100
+            local speed = Lock_speed * (1+scl*strength)
+            for i = 0, Qualtiy[Setting].Stars do
+                stars[i].DX = stars[i].DX + math.random(-RS, RS) * speed
+                stars[i].DY = stars[i].DY + math.random(-RS, RS) * speed
+                
+                stars[i].z = stars[i].z - speed
+                
+                if stars[i].z < 1 then
+                    stars[i].x = math.random(-w, h)
+                    stars[i].y = math.random(-h, h)
+                    stars[i].DX = math.random(-DScale, DScale)
+                    stars[i].DY = math.random(-DScale, DScale)
+                    stars[i].z = w
+                end
+                
+                local s = math.remap(stars[i].z, 0, w, mSize, 0)
+                local a = s / mSize * 255
+                
+                local px = (stars[i].x / stars[i].z) * w + math.remap(stars[i].z, 0, w, stars[i].DX, 0)
+                local py = (stars[i].y / stars[i].z) * h + math.remap(stars[i].z, 0, w, stars[i].DY, 0)
+                
+                render.setColor(Color(255, 255, 255, a-5))
+                render.drawTexturedRectRotated(px + 256, py + 256, s, s, 0)
+            end
+            
+            --### GLOWING SPIKES
+            local Amt = Qualtiy[Setting].Spikes
+            local Rad = 250
+            for i = 1, Amt do
+                now = fft[math.round(i/(Amt/64))+3]
+                
+                local poly = {
+                    {
+                        x = 256 + math.cos(math.rad(360/Amt*i-90))*Rad,
+                        y = 256 + math.sin(math.rad(360/Amt*i-90))*Rad
+                    },
+                    {
+                        x = 256 - math.cos(math.rad(360/Amt*(i+1)-90))*Rad,
+                        y = 256 - math.sin(math.rad(360/Amt*(i+1)-90))*Rad
+                    },
+                    {
+                        x = 256,
+                        y = 256
+                    },
+                }
+                
+                render.setColor(Color(180+180*math.cos((counter+i/(100*Setting))/2), 1, 1):hsvToRGB():setA(math.clamp(now*5*100*2,0,255)))
+                render.drawPoly(poly)
+                
+                local poly = {
+                    {
+                        x = 256 + math.cos(-math.rad(360/Amt*i-90))*Rad,
+                        y = 256 + math.sin(-math.rad(360/Amt*i-90))*Rad
+                    },
+                    {
+                        x = 256 - math.cos(-math.rad(360/Amt*(i+1)-90))*Rad,
+                        y = 256 - math.sin(-math.rad(360/Amt*(i+1)-90))*Rad
+                    },
+                    {
+                        x = 256,
+                        y = 256
+                    },
+                }
+                
+                render.drawPoly(poly)
+            end
+            
+            --### GLOWING LIGHTS
+            local Amt = Qualtiy[Setting].Lights
+            local Rad = 250
+            for i = 1, Amt do
+                now = fft[math.round(i/(Amt/64))+3]
+                
+                local poly = {
+                    {
+                        x = 256 - math.cos(math.rad(360/Amt*i-90))*Rad,
+                        y = 256 - math.sin(math.rad(360/Amt*i-90))*Rad
+                    },
+                    {
+                        x = 256 + math.cos(math.rad(360/Amt*(i+1)-90))*Rad,
+                        y = 256 + math.sin(math.rad(360/Amt*(i+1)-90))*Rad
+                    },
+                    {
+                        x = 256,
+                        y = 256
+                    },
+                }
+                
+                render.setColor(Color(180+180*math.cos((counter+i*2/(100*Setting))), 1, 1):hsvToRGB():setA(math.clamp(now*5*100/2,0,255)))
+                render.drawPoly(poly)
+                
+                local poly = {
+                    {
+                        x = 256 - math.cos(math.rad(360/Amt*i-90))*Rad,
+                        y = 256 - math.sin(math.rad(360/Amt*i-90))*Rad
+                    },
+                    {
+                        x = 256 + math.cos(-math.rad(360/Amt*(i+1)-90))*Rad,
+                        y = 256 + math.sin(-math.rad(360/Amt*(i+1)-90))*Rad
+                    },
+                    {
+                        x = 256,
+                        y = 256
+                    },
+                }
+                
+                render.drawPoly(poly)
+            end
+            
+            --### SPHERE VISUALIZER
+            render.setTexture()
+            local Amt = Qualtiy[Setting].Vis
+            local strength = 2
+            local radius = 90
+            local zoom = radius*(1+scl*strength)
+            for i = 0, Amt do
+                local now = fft[math.round(i/(Amt/64))+3]
+                local pos = math.rad(180/Amt*i-90)
+                local scl = zoom*(math.clamp(now*5,0,1.5)+1)
+                local vis = radius*(math.clamp(now*5,0,1.5)+1)
+                
+                render.setColor(Color(180+180*math.cos((counter+i/(100*Setting))), 1, 1):hsvToRGB())
+                render.drawTexturedRectRotated(256 + math.cos(pos)*scl/2, 256 + math.sin(pos)*scl/2, 3 * 256/Amt, vis, -180/Amt*i-180)
+                render.drawTexturedRectRotated(256 - math.cos(-pos)*scl/2, 256 - math.sin(-pos)*scl/2, 3 * 256/Amt, vis, 180/Amt*i-180)
+            end
+            
+            --### BLACK IN THE MIDDLE CIRCLE
+            render.setColor(Color(0,0,0))
+            render.setTexture()
+            local polyData = {}
+            local Seg = Qualtiy[Setting].Seg
+            local radius = radius/100*95
+            local zoom = radius*(1+scl*strength)
+            for i = 0, Seg do 
+                poly = {
+                    x = 256 + math.cos(math.rad(360/Seg*i))*zoom,
+                    y = 256 + math.sin(math.rad(360/Seg*i))*zoom
+                }
+                table.insert(polyData, poly)
+            end
+            render.drawPoly(polyData)
+            
+            --### Logo
+            render.setTexture(logo)
+            render.setColor(Color(255,255,255,255))
+            render.drawTexturedRectRotated(256-3, 256, 512*(1+scl*strength), 512*(1+scl*strength), 0)
+            
+            --### icons
+            render.setTexture(gear)
+            render.setColor(Color(255,255,255,255))
+            render.drawTexturedRectRotated(16, 16, 32, 32, 0)
+            render.setTexture(MuteStat)
+            render.drawTexturedRectRotated(16+32, 16, 32, 32, 0)
+            
+            --### Setting
+            render.setColor(Color(0,0,0))
+            render.setFont("Trebuchet24")
+            local String = ""
+            if Setting == 1 then
+                String = "Low"
+            elseif Setting == 2 then
+                String = "Medium"
+            elseif Setting == 3 then
+                String = "High"
+            end
+            render.drawSimpleText(64+8, 16, String, 0, 1)
+        end
+    end
+end)

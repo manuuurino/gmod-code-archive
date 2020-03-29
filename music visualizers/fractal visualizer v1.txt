@@ -1,0 +1,190 @@
+--@name Fractal Visualizer V1
+--@shared
+
+if SERVER then
+    if chip():isWeldedTo() then
+        chip():isWeldedTo():linkComponent(chip())
+    end
+end
+
+if CLIENT then
+    local perms = {
+        "render.screen",
+        "bass.loadURL",
+        "bass.play2D",
+        "sound.create",
+        "sound.modify"
+    }
+    
+    function load()
+        -- Audio
+        local sound
+        local musicURL = "http://air.radiorecord.ru:8102/club_320"
+        //local musicURL = "http://air.radiorecord.ru:8102/chillhouse_320"
+        local range = 192
+        local loop = false
+        
+        bass.loadURL(musicURL, "mono", function(snd, err, errtxt)
+            if snd then
+                snd:setLooping(loop)
+                snd:setPos(chip():getPos())
+                sound = snd
+                
+                hook.add("think", "sound", function()
+                    if chip():getPos():getDistanceSqr(player():getPos()) <= range * range then
+                        sound:setVolume(1)
+                    else
+                        sound:setVolume(0)
+                    end
+                end)
+            else
+                print("ERROR: " .. errtxt)
+            end
+        end)
+        
+        local function grow(maxDeep, ang, x, y, len, lenMul, colFn, deep, curAng)
+            deep = deep or 0
+            curAng = curAng or 0
+            if deep > maxDeep then return end
+            
+            colFn(maxDeep, deep)
+            
+            local newX, newY = 
+                x + math.cos(math.rad(curAng - 90)) * len,
+                y + math.sin(math.rad(curAng - 90)) * len
+            render.drawLine(x, y, newX, newY)
+            
+            grow(maxDeep, ang, newX, newY, len * lenMul, lenMul, colFn, deep + 1, curAng - ang)
+            grow(maxDeep, ang, newX, newY, len * lenMul, lenMul, colFn, deep + 1, curAng + ang)
+        end
+        
+        local function avr(min, max, table)
+            local avrg = 0
+            if table and #table > 0 then
+                max = math.clamp(max, 1, #table)
+                min = math.clamp(min, 1, max)
+                
+                for i = min, max do
+                    avrg = avrg + table[i]
+                end
+            end
+            
+            return avrg / (max - min)
+        end
+        
+        local part = {}
+        part.__index = part
+        
+        function part.placeRandom(self)
+            self.x = math.random(0, 512)
+            self.y = math.random(-100, 512)
+        end
+        
+        function part.reset(self)
+            self.x = math.random(0, 512)
+            self.y = 0
+            self.size = math.random(2, 8)
+            self.vx = math.random(-8, 8)
+            self.vy = 16 + math.random(0, 16)
+        end
+        
+        function part.update(self, dt)
+            self.x = self.x + self.vx * dt
+            self.y = self.y + self.vy * dt
+            
+            if self.y >= 512 or self.x > 512 or self.x < 0 then
+                self:reset()
+            end
+        end
+        
+        function part.draw(self)
+            render.setColor(Color(255, 255, 255, 16))
+            render.drawRect(self.x, self.y, self.size, self.size)
+        end
+        
+        local function createParticle()
+            local parti = setmetatable({}, part)
+            
+            parti:reset()
+            parti:placeRandom()
+            
+            return parti
+        end
+        
+        local particles = {}
+        for i = 1, 32 do
+            particles[i] = createParticle()
+        end
+
+        local rt = material.create("UnlitGeneric")
+        render.createRenderTarget("canvas")
+        
+        local lt = timer.realtime()
+        
+        local hue = 0
+        hook.add("render", "tree", function()
+            if !sound then return end
+            if chip():getPos():getDistanceSqr(player():getPos()) > range * range then return end
+            
+            local ct = timer.realtime()
+            local dt = ct - lt
+            
+            fft = sound:getFFT(5)
+            
+            local base = avr(0, 50, fft)
+            
+            render.setMaterial(nil)
+            render.selectRenderTarget("canvas")
+                render.setColor(Color(0, 0, 0, 255 - 255 * (math.min(1, base * 15))))
+                render.drawRect(0, 0, 512, 512)
+                
+                hue = hue + dt * 10 + 2048 * (base ^ 2)
+                grow(7, 50 * math.min(1, 0.4 + base * 4), 256, 512 - 64, 64, math.min(1, 0.8 + base),
+                    function(maxDeep, deep)
+                        render.setColor(Color((hue - 32 * deep) % 360, 0.7, 1):hsvToRGB())                        
+                    end)
+                    
+                for i = 1, #particles do
+                    particles[i]:update(dt * (1 + base * 15))
+                    particles[i]:draw()
+                end
+            render.selectRenderTarget(nil)
+            
+            rt:setTextureRenderTarget("$baseTexture", "canvas")
+            render.setMaterial(rt)
+            render.setColor(Color(255, 255, 255, 255))
+            render.drawTexturedRectFast(0, 0, 1024, 1024)
+            
+            lt = ct
+        end)
+    end
+    
+    local has = true
+    for _, perm in pairs(perms) do
+        if not hasPermission(perm) then
+            has = false
+            break
+        end
+    end
+    
+    if has then
+        load()
+    else
+        setupPermissionRequest(perms, "Gimmi Gimmi", true)
+        
+        if hasPermission("render.screen") then
+            hook.add("render", "perms", function()
+                render.drawSimpleText(256, 256, "Cyka press E and timebuffer about 0.02 pls", 1, 1)
+            end)
+        end
+        
+        hook.add("permissionrequest", "perms", function()
+            if permissionRequestSatisfied() then
+                hook.remove("permissionrequest", "perms")
+                hook.remove("render", "perms")
+                
+                load()
+            end
+        end)
+    end
+end

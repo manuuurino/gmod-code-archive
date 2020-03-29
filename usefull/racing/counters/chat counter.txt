@@ -1,0 +1,17 @@
+--@name Chat Counter
+--@author
+--@client
+
+if player() == owner() then
+    local x = 10
+    concmd("say Start in " .. x)
+    timer.create("xaxa", 1, 0, function()
+        x = x - 1
+        local say = x .. "..."
+        if x == 0 then
+            say = "GO!!"
+            timer.remove("xaxa")
+        end
+        concmd("say " .. say)
+    end)
+end

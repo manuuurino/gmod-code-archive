@@ -1,0 +1,100 @@
+--@name Visualizer V.2
+--@shared
+
+if SERVER then
+    chip():isWeldedTo():linkComponent(chip())
+end
+
+if CLIENT and owner() == player() then
+    local urls = {}
+        urls["Radio/Best"] = "http://air.radiorecord.ru:8102/club_320"
+        urls["Song/Funky/Moskau"] = "https://www.youtube.com/watch?v=NvS351QKFV4"
+        urls["Song/Funky/Putin"] = "https://u.teknik.io/c5EA9.mp3"
+        urls["Radio/ILoveDreist"] = "http://stream03.iloveradio.de/iloveradio6.mp3?hadpreroll"
+    
+    -- Options
+    local simuspeed = 50
+    
+    -- Core
+    local extend = 10
+    local exfade = 32
+    local radius = 128
+    
+    -- Audio
+    local musicURL = urls["Radio/ILoveDreist"]
+    local range = 256
+    local loop = false
+    
+    local function avr(min, max, table)
+        local avrg = 0
+        if table and #table > 0 then
+            max = math.clamp(max, 1, #table)
+            min = math.clamp(min, 1, max)
+            
+            for i = min, max do
+                avrg = avrg + table[i]
+            end
+        end
+        
+        return avrg
+    end
+    
+    local sound
+    bass.loadURL(musicURL, "mono", function(snd, err, errtxt)
+        if snd then
+            snd:setLooping(loop)
+            snd:setPos(chip():getPos())
+            sound = snd
+            
+            hook.add("think", "sound", function()
+                local dist = chip():getPos():getDistance( player():getPos() )
+                
+                if dist <= range then
+                    sound:setVolume(1)
+                else
+                    sound:setVolume(0)
+                end
+            end)
+        else
+            print("ERROR: " .. errtxt)
+        end
+    end)
+    
+    local a = 0
+    local last = timer.realtime()
+    hook.add("render", "Visualizer", function()
+        local t = timer.realtime() - last
+        t = t * simuspeed
+        last = timer.realtime()
+        
+        a = a + 1 * t
+        
+        if sound then
+            fft = sound:getFFT(5)
+        else
+            fft = {}
+        end
+        
+        extend = avr(1, 30, fft) * 16
+        
+        for i = 1, exfade do
+            poly = {}
+            for j = 0, 3 do
+                local rad = math.rad(360 / 3 * j - a)
+                local radi = radius + (1 + extend / exfade * (i - 1))
+                
+                local hold = {
+                   x = 256 + math.cos(rad) * radi,
+                   y = 256 + math.sin(rad) * radi,
+                }
+                table.insert(poly, hold)
+            end
+            if i == 1 then
+                render.setColor(Color(255, 50, 50, 255))
+            else
+                render.setColor(Color(255, 50, 50, 10 - 10 / exfade * i))
+            end
+            render.drawPoly(poly)
+        end
+    end)
+end
