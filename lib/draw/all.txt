@@ -1,0 +1,19 @@
+--@include ./color.txt
+--@include ./fast_color.txt
+--@include ./pixel.txt
+
+local function packAll(list)
+    local tmp = {}
+    for _, path in pairs(list) do
+        for k, v in pairs(require(path)) do
+            tmp[k] = v
+        end
+    end
+    return tmp
+end
+
+color = require("./color.txt")
+fcolor = require("./fast_color.txt")
+draw = packAll({
+    "./pixel.txt"
+})

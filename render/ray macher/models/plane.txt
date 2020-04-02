@@ -1,0 +1,12 @@
+local plane = {}
+
+function plane:create(pos)
+    self.pos = p
+    return plane
+end
+
+function plane:calculate(ray)
+    return ray.pos.y - self.pos.y
+end
+
+return plane

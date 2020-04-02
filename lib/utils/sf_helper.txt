@@ -1,0 +1,15 @@
+local sf_helper = {}
+
+function sf_helper.isQuotaSafe(range)
+    return quotaAverage() < quotaMax() * range
+end
+
+function sf_helper.doUntilQuota(limit, fn)
+    while (not fn()) and sf_helper.isQuotaSafe(limit) do end 
+end
+
+function sf_helper.whileQuota(limit, fn)
+    while sf_helper.isQuotaSafe(limit) and not fn() do end 
+end
+
+return sf_helper

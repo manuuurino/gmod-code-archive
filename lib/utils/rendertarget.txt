@@ -1,0 +1,22 @@
+local rendertarget = {}
+local rtStack = {}
+
+rendertarget._selection = function(id) -- override
+    render.selectRenderTarget(id)
+end
+
+function rendertarget.get()
+    return rtStack[#rtStack]
+end
+
+function rendertarget.push(id)
+    rtStack[#rtStack + 1] = id
+    rendertarget._selection(id)
+end
+
+function rendertarget.pop()
+    rtStack[#rtStack] = nil
+    rendertarget._selection(rendertarget.get())
+end
+
+return rendertarget

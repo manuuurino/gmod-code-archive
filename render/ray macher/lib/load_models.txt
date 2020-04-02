@@ -1,0 +1,7 @@
+--@include ../models/plane.txt
+--@include ../models/sphere.txt
+
+return {
+    plane = require("../models/plane.txt")
+    sphere = require("../models/sphere.txt")
+}

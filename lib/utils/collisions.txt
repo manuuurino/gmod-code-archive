@@ -1,0 +1,72 @@
+local collsions = {}
+
+function collsions.inRange(v, a, b)
+    return v >= a and v <= b
+end
+
+function collsions.inRange2D(
+    vx, vy,
+    ax, ay,
+    bx, by)
+
+    return
+        collsions.inRange(vx, ax, bx) and
+        collsions.inRange(vy, ay, by)
+end
+
+function collsions.inRange3D(
+    vx, vy, vz,
+    ax, ay, vz,
+    bx, by, vz)
+
+    return
+        collsions.inRange(vx, ax, bx) and
+        collsions.inRange(vy, ay, by) and
+        collsions.inRange(vz, az, bz)
+end
+
+function collsions.inRangeVector2D(v, a, b)
+    return collsions.inRange2D(
+        v.x, v.y,
+        a.x, a.y,
+        b.x, b.y
+    )
+end
+
+function collsions.inRangeVector3D(v, a, b)
+    return collsions.inRange3D(
+        v.x, v.y, v.z,
+        a.x, a.y, v.z,
+        b.x, b.y, v.z
+    )
+end
+
+function collsions.AABB_Line(
+    a1, a2,
+    b1, b2)
+
+    return
+        collsions.inRange2D(a1, b1, b2) or collsions.inRange2D(a2, b1, b2) or
+        collsions.inRange2D(b1, a1, a2) or collsions.inRange2D(b2, a1, a2)
+end
+
+function collsions.AABB_Box2D(
+    ax1, ax2, ay1, ay2,
+    bx1, bx2, by2, by2)
+
+    return
+        collsions.AABB_Line(ax1, ax2, bx1, bx2) and
+        collsions.AABB_Line(ay1, ay2, by1, by2)
+end
+
+function collsions.AABB_Box3D(
+    ax1, ax2, ay1, ay2, az1, az2,
+    bx1, bx2, by2, by2, bz2, bz2)
+
+    return
+        collsions.AABB_Line(ax1, ax2, bx1, bx2) and
+        collsions.AABB_Line(ay1, ay2, by1, by2) and
+        collsions.AABB_Line(az1, az2, bz1, bz2)
+end
+
+return collsions

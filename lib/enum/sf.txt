@@ -1,0 +1,14 @@
+return function(global)
+    local owner = owner() == player()
+    local not_owner = not owner
+
+    if global then
+        OWNER = owner
+        NOT_OWNER = notowner
+    end
+
+    return {
+        OWNER = owner,
+        NOT_OWNER = notowner,
+    }
+end

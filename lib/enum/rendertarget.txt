@@ -1,0 +1,12 @@
+return function(global)
+    local rendertarget_size_w, rendertarget_size_h = 1024, 1024
+
+    if global then
+        RENDERTARGET_SIZE_W, RENDERTARGET_SIZE_H = rendertarget_size_w, rendertarget_size_h
+    end
+
+    return {
+        SIZE_W = rendertarget_size_w, 
+        SIZE_H = rendertarget_size_h,
+    }
+end

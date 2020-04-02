@@ -1,0 +1,93 @@
+local kPerms = {}
+
+function kPerms.askPerms(tbl)
+    if not type(tbl) == "table" then
+        error("askPerms, expected table got " .. type(tbl))
+    end
+    
+    local title = tbl.title or "Permissions needed"
+    local permIDs = tbl.permissions or {}
+    local gotPermsFn = tbl.load or function() end
+    local pendingFn = tbl.pending or kPerms.drawPendingSimple
+    
+    local has = true
+    for _, permID in pairs(permIDs) do
+        if not hasPermission(permID) then
+            has = false
+            break
+        end
+    end
+    
+    if has then
+        gotPermsFn()
+    else
+        setupPermissionRequest(permIDs, title, true)
+        
+        pendingFn.onPending()
+        
+        hook.add("permissionrequest", "perms", function()
+            if permissionRequestSatisfied() then
+                hook.remove("permissionrequest", "perms")
+                pendingFn.onLoad()
+                gotPermsFn()
+            end
+        end)
+    end
+end
+
+function kPerms.drawPendingFloatingKey()
+    return {
+        onLoad = function()
+            if hasPermission("render.screen") then
+                hook.remove("render", "perms")
+            end
+        end,
+        onPending = function()
+            if hasPermission("render.screen") then
+                hook.add("render", "perms", function()
+                    render.setColor(Color(30, 30, 30, 255))
+                    render.drawRect(224, 228, 64, 64)
+                    
+                    render.setColor(Color(50, 50, 50, 255))
+                    render.drawRect(224, 224, 64, 64)
+                    
+                    local float = math.cos(timer.curtime() * 2) * 4
+                    
+                    render.setColor(Color(0, 0, 0, 100))
+                    render.drawRect(226, 224 - 4 * (0.5 + math.cos(timer.curtime() * 2) / 2), 60, 60)
+                    
+                    render.setColor(Color(130, 130, 130, 255))
+                    render.drawRect(226, 220 - float, 60, 60)
+                    
+                    render.setColor(Color(150, 150, 150, 255))
+                    render.drawRect(226, 218 - float, 60, 60)
+                    
+                    render.setColor(Color(30, 30, 30, 255))
+                    render.drawRect(246, 228 - float, 4, 40)
+                    render.drawRect(246, 246 - float, 20, 4)
+                    render.drawRect(246, 264 - float, 20, 4)
+                    render.drawRect(246, 228 - float, 20, 4)
+                end)
+            end
+        end,
+    }
+end
+
+function kPerms.drawPendingSimple(text)
+    return {
+        onLoad = function()
+            if hasPermission("render.screen") then
+                hook.remove("render", "perms")
+            end
+        end,
+        onPending = function()
+            if hasPermission("render.screen") then
+                hook.add("render", "perms", function()
+                    render.drawSimpleText(256, 256, text or "Press E to open the permissions menu", 1, 1)
+                end)
+            end
+        end,
+    }
+end
+
+return kPerms

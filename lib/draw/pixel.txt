@@ -1,0 +1,21 @@
+--@include fast_color.txt
+
+local col_lib = require("fast_color.txt")
+local fColor = col_lib.new 
+
+local pixel = {}
+
+function pixel.drawPixelFastRGBA(x, y, r, g, b, a)
+    render.setRGBA(r, g, b, a)
+    render.drawRectFast(x, y, 1, 1)
+end
+
+function pixel.drawPixelRGBA(x, y, r, g, b, a)
+    pixel.drawPixelFastRGBA(x, y, pixel.niceRGBAout(r, g, b, a))
+end
+
+function pixel.drawPixelCol(x, y, col)
+    pixel.drawPixelFastRGBA(x, y, col.r, col.g, col.b, col.a)
+end
+
+return pixel

@@ -1,0 +1,29 @@
+local mHandler = {}
+
+mHandler.models = {}
+function mHandler.usingModels(models)
+    mHandler.models = models
+end
+
+function mHandler.createModel(model_name, ...)
+    return models[model_name]:create(...)
+end
+
+mHandler.list = {}
+function mHandler.addToList(mdl)
+    mHandler.list[#mHandler.list + 1] = mdl
+end
+
+function mHandler.addAllToList()
+    for _, mdl in pairs(mHandler.models) do
+        mHandler.list[#mHandler.list + 1] = mdl
+    end
+end
+
+function mHandler.loopList(fn)
+    for _, mdl in pairs(mHandler.list) do
+        fn(mdl)
+    end
+end
+
+return mHandler

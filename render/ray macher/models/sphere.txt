@@ -1,0 +1,13 @@
+local sphere = {}
+
+function sphere:create(p, r)
+    self.pos = p
+    self.radius = r
+    return sphere
+end
+
+function sphere:calculate(ray)
+    return ray.pos:getDistance(self.pos) - self.radius
+end
+
+return sphere

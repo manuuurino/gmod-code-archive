@@ -1,0 +1,5 @@
+-- ToDo : Color class
+
+local color = {}
+
+return color

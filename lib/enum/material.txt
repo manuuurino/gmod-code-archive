@@ -1,0 +1,170 @@
+local lshift = bit.lshift
+
+return function(global)
+    -- https://developer.valvesoftware.com/wiki/Material_Flags
+    local material_var_debug                    = lshift(1, 0)
+    local material_var_no_debug_override        = lshift(1, 1)
+    local material_var_no_draw                  = lshift(1, 2)
+    local material_var_use_in_fillrate_mode     = lshift(1, 3)
+    local material_var_vertexcolor              = lshift(1, 4)
+    local material_var_vertexalpha              = lshift(1, 5)
+    local material_var_selfillum                = lshift(1, 6)
+    local material_var_additive                 = lshift(1, 7)
+    local material_var_alphatest                = lshift(1, 8)
+    local material_var_multipass                = lshift(1, 9)
+    local material_var_znearer                  = lshift(1, 10)
+    local material_var_model                    = lshift(1, 11)
+    local material_var_flat                     = lshift(1, 12)
+    local material_var_nocull                   = lshift(1, 13)
+    local material_var_nofog                    = lshift(1, 14)
+    local material_var_ignorez                  = lshift(1, 15)
+    local material_var_decal                    = lshift(1, 16)
+    local material_var_envmapsphere             = lshift(1, 17)
+    local material_var_noalphamod               = lshift(1, 18)
+    local material_var_envmapcameraspace        = lshift(1, 19)
+    local material_var_basealphaenvmapmask      = lshift(1, 20)
+    local material_var_translucent              = lshift(1, 21)
+    local material_var_normalmapalphaenvmapmask = lshift(1, 22)
+    local material_var_needs_software_skinning  = lshift(1, 23)
+    local material_var_opaquetexture            = lshift(1, 24)
+    local material_var_envmapmode               = lshift(1, 25)
+    local material_var_suppress_decals          = lshift(1, 26)
+    local material_var_halflambert              = lshift(1, 27)
+    local material_var_wireframe                = lshift(1, 28)
+    local material_var_allowalphatocoverage     = lshift(1, 29)
+    local material_var_ignore_alpha_modulation  = lshift(1, 30)
+
+    local material_var2_lighting_unlit                          = 0
+    local material_var2_lighting_vertex_lit                     = lshift(1, 0)
+    local material_var2_lighting_lightmap0                      = lshift(1, 1)
+    local material_var2_lighting_bumped_lightmap                = lshift(1, 2)
+    local material_var2_lighting_mask                           = material_var2_lighting_vertex_lit + material_var2_lighting_lightmap0 + material_var2_lighting_bumped_lightmap
+    local material_var2_diffuse_bumpmapped_model                = lshift(1, 4)
+    local material_var2_uses_env_cubemap                        = lshift(1, 5)
+    local material_var2_needs_tangent_spaces                    = lshift(1, 6)
+    local material_var2_needs_software_lighting                 = lshift(1, 7)
+    local material_var2_blend_with_lightmap_alpha               = lshift(1, 8)
+    local material_var2_needs_baked_lighting_snapshots          = lshift(1, 9)
+    local material_var2_use_flashlight                          = lshift(1, 10)
+    local material_var2_use_fixed_function_baked_lighting       = lshift(1, 11)
+    local material_var2_needs_fixed_function_flashlight         = lshift(1, 12)
+    local material_var2_use_editor                              = lshift(1, 13)
+    local material_var2_needs_power_of_two_frame_buffer_texture = lshift(1, 14)
+    local material_var2_needs_full_frame_buffer_texture         = lshift(1, 15)
+    local material_var2_is_spritecard                           = lshift(1, 16)
+    local material_var2_uses_vertexid                           = lshift(1, 17)
+    local material_var2_supports_hw_skinning                    = lshift(1, 18)
+    local material_var2_supports_flashlight                     = lshift(1, 19)
+
+    if global then
+        MATERIAL_VAR_DEBUG                    = material_var_debug
+        MATERIAL_VAR_NO_DEBUG_OVERRIDE        = material_var_no_debug_override
+        MATERIAL_VAR_NO_DRAW                  = material_var_no_draw
+        MATERIAL_VAR_USE_IN_FILLRATE_MODE     = material_var_use_in_fillrate_mode
+        MATERIAL_VAR_VERTEXCOLOR              = material_var_vertexcolor
+        MATERIAL_VAR_VERTEXALPHA              = material_var_vertexalpha
+        MATERIAL_VAR_SELFILLUM                = material_var_selfillum
+        MATERIAL_VAR_ADDITIVE                 = material_var_additive
+        MATERIAL_VAR_ALPHATEST                = material_var_alphatest
+        MATERIAL_VAR_MULTIPASS                = material_var_multipass
+        MATERIAL_VAR_ZNEARER                  = material_var_znearer
+        MATERIAL_VAR_MODEL                    = material_var_model
+        MATERIAL_VAR_FLAT                     = material_var_flat
+        MATERIAL_VAR_NOCULL                   = material_var_nocull
+        MATERIAL_VAR_NOFOG                    = material_var_nofog
+        MATERIAL_VAR_IGNOREZ                  = material_var_ignorez
+        MATERIAL_VAR_DECAL                    = material_var_decal
+        MATERIAL_VAR_ENVMAPSPHERE             = material_var_envmapsphere
+        MATERIAL_VAR_NOALPHAMOD               = material_var_noalphamod
+        MATERIAL_VAR_ENVMAPCAMERASPACE        = material_var_envmapcameraspace
+        MATERIAL_VAR_BASEALPHAENVMAPMASK      = material_var_basealphaenvmapmask
+        MATERIAL_VAR_TRANSLUCENT              = material_var_translucent
+        MATERIAL_VAR_NORMALMAPALPHAENVMAPMASK = material_var_normalmapalphaenvmapmask
+        MATERIAL_VAR_NEEDS_SOFTWARE_SKINNING  = material_var_needs_software_skinning
+        MATERIAL_VAR_OPAQUETEXTURE            = material_var_opaquetexture
+        MATERIAL_VAR_ENVMAPMODE               = material_var_envmapmode
+        MATERIAL_VAR_SUPPRESS_DECALS          = material_var_suppress_decals
+        MATERIAL_VAR_HALFLAMBERT              = material_var_halflambert
+        MATERIAL_VAR_WIREFRAME                = material_var_wireframe
+        MATERIAL_VAR_ALLOWALPHATOCOVERAGE     = material_var_allowalphatocoverage
+        MATERIAL_VAR_IGNORE_ALPHA_MODULATION  = material_var_ignore_alpha_modulation
+
+        MATERIAL_VAR2_LIGHTING_UNLIT                          = material_var2_lighting_unlit
+        MATERIAL_VAR2_LIGHTING_VERTEX_LIT                     = material_var2_lighting_vertex_lit
+        MATERIAL_VAR2_LIGHTING_LIGHTMAP0                      = material_var2_lighting_lightmap0
+        MATERIAL_VAR2_LIGHTING_BUMPED_LIGHTMAP                = material_var2_lighting_bumped_lightmap
+        MATERIAL_VAR2_LIGHTING_MASK                           = material_var2_lighting_mask
+        MATERIAL_VAR2_DIFFUSE_BUMPMAPPED_MODEL                = material_var2_diffuse_bumpmapped_model
+        MATERIAL_VAR2_USES_ENV_CUBEMAP                        = material_var2_uses_env_cubemap
+        MATERIAL_VAR2_NEEDS_TANGENT_SPACES                    = material_var2_needs_tangent_spaces
+        MATERIAL_VAR2_NEEDS_SOFTWARE_LIGHTING                 = material_var2_needs_software_lighting
+        MATERIAL_VAR2_BLEND_WITH_LIGHTMAP_ALPHA               = material_var2_blend_with_lightmap_alpha
+        MATERIAL_VAR2_NEEDS_BAKED_LIGHTING_SNAPSHOTS          = material_var2_needs_baked_lighting_snapshots
+        MATERIAL_VAR2_USE_FLASHLIGHT                          = material_var2_use_flashlight
+        MATERIAL_VAR2_USE_FIXED_FUNCTION_BAKED_LIGHTING       = material_var2_use_fixed_function_baked_lighting
+        MATERIAL_VAR2_NEEDS_FIXED_FUNCTION_FLASHLIGHT         = material_var2_needs_fixed_function_flashlight
+        MATERIAL_VAR2_USE_EDITOR                              = material_var2_use_editor
+        MATERIAL_VAR2_NEEDS_POWER_OF_TWO_FRAME_BUFFER_TEXTURE = material_var2_needs_power_of_two_frame_buffer_texture
+        MATERIAL_VAR2_NEEDS_FULL_FRAME_BUFFER_TEXTURE         = material_var2_needs_full_frame_buffer_texture
+        MATERIAL_VAR2_IS_SPRITECARD                           = material_var2_is_spritecard
+        MATERIAL_VAR2_USES_VERTEXID                           = material_var2_uses_vertexid
+        MATERIAL_VAR2_SUPPORTS_HW_SKINNING                    = material_var2_supports_hw_skinning
+        MATERIAL_VAR2_SUPPORTS_FLASHLIGHT                     = material_var2_supports_flashlight
+    end
+
+    return {
+        material_var_debug,
+        material_var_no_debug_override,
+        material_var_no_draw,
+        material_var_use_in_fillrate_mode,
+        material_var_vertexcolor,
+        material_var_vertexalpha,
+        material_var_selfillum,
+        material_var_additive,
+        material_var_alphatest,
+        material_var_multipass,
+        material_var_znearer,
+        material_var_model,
+        material_var_flat,
+        material_var_nocull,
+        material_var_nofog,
+        material_var_ignorez,
+        material_var_decal,
+        material_var_envmapsphere,
+        material_var_noalphamod,
+        material_var_envmapcameraspace,
+        material_var_basealphaenvmapmask,
+        material_var_translucent,
+        material_var_normalmapalphaenvmapmask,
+        material_var_needs_software_skinning,
+        material_var_opaquetexture,
+        material_var_envmapmode,
+        material_var_suppress_decals,
+        material_var_halflambert,
+        material_var_wireframe,
+        material_var_allowalphatocoverage,
+        material_var_ignore_alpha_modulation,
+
+        material_var2_lighting_unlit,
+        material_var2_lighting_vertex_lit,
+        material_var2_lighting_lightmap0,
+        material_var2_lighting_bumped_lightmap,
+        material_var2_lighting_mask,
+        material_var2_diffuse_bumpmapped_model,
+        material_var2_uses_env_cubemap,
+        material_var2_needs_tangent_spaces,
+        material_var2_needs_software_lighting,
+        material_var2_blend_with_lightmap_alpha,
+        material_var2_needs_baked_lighting_snapshots,
+        material_var2_use_flashlight,
+        material_var2_use_fixed_function_baked_lighting,
+        material_var2_needs_fixed_function_flashlight,
+        material_var2_use_editor,
+        material_var2_needs_power_of_two_frame_buffer_texture,
+        material_var2_needs_full_frame_buffer_texture,
+        material_var2_is_spritecard,
+        material_var2_uses_vertexid,
+        material_var2_supports_hw_skinning,
+        material_var2_supports_flashlight,
+    }
+end

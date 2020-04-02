@@ -1,0 +1,236 @@
+--@include ../../enum/all.txt 
+
+--@include ../../utils/arrays.txt
+--@include ../../utils/collisions.txt
+--@include ../../utils/rendertarget.txt
+--@include ../../utils/sf_helper.txt
+
+--@include ../utils/pixels.txt
+
+require("../../enum/all.txt")(true)
+
+local array = require("../../utils/arrays.txt")
+local collisions = require("../../utils/collisions.txt")
+local rendertarget = require("../../utils/rendertarget.txt")
+local sf_helper = require("../../utils/sf_helper.txt")
+
+local pixelRender = require("../utils/pixels.txt")
+
+return function(_SCREEN_W, _SCREEN_H, _RT_W, _RT_H, _RT_NAME_IND)
+    -- locals enums
+    local TEXTFILTER = TEXTFILTER
+    local SCREEN_SIZE_W, SCREEN_SIZE_H = _SCREEN_W or SCREEN_SIZE_W, _SCREEN_H or SCREEN_SIZE_H 
+    local RENDERTARGET_SIZE_W, RENDERTARGET_SIZE_H = _RT_W or RENDERTARGET_SIZE_W, _RT_H or RENDERTARGET_SIZE_H
+
+    -- locals
+    local math = math
+
+    local render = render
+    local material = material
+
+    local kcRender = {}
+
+    -- defaults
+    local RT_NAME_INDEX = _RT_NAME_IND or "kewlCanvas_"
+    local RT_COPY = RT_NAME_INDEX .. "copy"
+
+    local getTime = timer.curtime
+    local WIDTH, HEIGHT = 2048, 2048
+    local FILTER_MAG, FILTER_MIN = TEXTFILTER.POINT, TEXTFILTER.ANISOTROPIC
+
+    -- vars
+    local RT_AMT_X, RT_AMT_Y
+    local SCR_WIDTH, SCR_HEIGHT
+
+    local lt, t, dt = getTime(), getTime(), 0
+
+    -- local funcs
+    local function isPixelXYInScreen(px, py, scrX, scrY)
+        return collisions.inRange2D(
+            px - SCR_WIDTH * scrX,
+            py - SCR_HEIGHT * scrY,
+            0, 0, SCR_WIDTH - 1, SCR_HEIGHT - 1)
+    end
+
+    local function isPixelInScreen(pixel, scrX, scrY)
+        local px, py = array.translate1Dto2D(pixel, WIDTH)
+        return isPixelXYInScreen(px, py, scrX, scrY)
+    end
+
+    -- returns
+
+    function kcRender.setFilterMag(filter) FILTER_MAG = filter end
+    function kcRender.setFilterMin(filter) FILTER_MIN = filter end
+    function kcRender.getFilterMag(filter) return FILTER_MAG end
+    function kcRender.getFilterMin(filter) return FILTER_MIN end
+
+    function kcRender.getRTamt() return RT_AMT_X, RT_AMT_Y end
+    function kcRender.getDrawScreenSize() return SCR_WIDTH, SCR_HEIGHT end
+    function kcRender.getRTName(rtID) return RT_NAME_INDEX .. rtID end
+
+    -- functions
+
+    function kcRender.loopAllRTs(fn)
+        for rtID = 0, RT_AMT_X * RT_AMT_Y - 1 do
+            if fn(rtID) then break end
+        end
+    end
+
+    -- setup fn
+
+    local mat_rt
+
+    kcRender._createMaterial = function() -- override
+        local mat_rt = material.create("UnlitGeneric")
+        mat_rt:setInt("$flags",
+            MATERIAL_VAR_ALPHATEST +
+            MATERIAL_VAR_VERTEXCOLOR +
+            MATERIAL_VAR_NOCULL
+        )
+        return mat_rt
+    end
+
+    kcRender._materialSelectRT = function(mat, id) -- override
+        mat:setTextureRenderTarget("$basetexture", id)
+    end
+
+    function kcRender.init(width, height, filterMag, filterMin)
+        WIDTH = width or WIDTH
+        HEIGHT = height or HEIGHT
+
+        FILTER_MAG = filterMag or FILTER_MAG
+        FILTER_MIN = filterMin or FILTER_MIN
+
+        RT_AMT_X, RT_AMT_Y = math.ceil(WIDTH / RENDERTARGET_SIZE_W), math.ceil(HEIGHT / RENDERTARGET_SIZE_H)
+
+        SCR_WIDTH, SCR_HEIGHT = WIDTH / RT_AMT_X, HEIGHT / RT_AMT_Y
+        
+        mat_rt = kcRender._createMaterial()
+
+        kcRender.rtNames = {}
+        kcRender.loopAllRTs(function(rtID)
+            local rtName = kcRender.getRTName(rtID)
+            kcRender.rtNames[rtID] = rtName
+            render.createRenderTarget(rtName)
+        end)
+
+        return WIDTH, HEIGHT
+    end
+
+    kcRender._start = true
+    kcRender.onSetup = function()
+        kcRender.loopAllRTs(function(rtID)
+            rendertarget._selection(kcRender.getRTName(rtID))
+            render.clear(Color(0, 0, 0, 0))
+        end)
+        rendertarget._selection(nil)
+    end -- override
+    function kcRender.setup()
+        if not kcRender._start then return end
+        kcRender.onSetup()
+        kcRender._start = false
+        return true
+    end
+
+    -- update
+
+    function kcRender.updateTime()
+        local ct = getTime()
+        if t == ct then return end
+        lt = t
+        t = ct
+        dt = t - lt
+    end
+
+    -- render
+
+    function kcRender.useFilter()
+        render.setFilterMag(FILTER_MAG)
+        render.setFilterMin(FILTER_MIN)
+    end
+
+    function kcRender.drawOnRT(rtID, fn)
+        local scrX, scrY = array.translate1Dto2D(rtID, RT_AMT_X)
+        local rtName = kcRender.rtNames[rtID]
+        kcRender.useFilter()
+        rendertarget.push(rtName)
+            local m = Matrix()
+            m:translate(Vector(-SCR_WIDTH * scrX, -SCR_HEIGHT * scrY))
+            render.pushMatrix(m)
+                fn(dt, t, scrX, scrY)
+            render.popMatrix()
+        rendertarget.pop()
+    end
+
+    function kcRender.drawOnRTs(fn)
+        kcRender.loopAllRTs(function(rtID)
+            kcRender.drawOnRT(rtID, fn)
+        end)
+    end
+
+    function kcRender.drawScreen(rtID)
+        local scrX, scrY = array.translate1Dto2D(rtID, RT_AMT_X)
+        
+        local rectW, rectH = SCREEN_SIZE_W / RT_AMT_X, SCREEN_SIZE_H / RT_AMT_Y
+
+        kcRender._materialSelectRT(mat_rt, kcRender.rtNames[rtID])
+        render.setMaterial(mat_rt)
+        render.setRGBA(255, 255, 255, 255)
+        render.drawTexturedRectUV(
+            -- X, Y
+            rectW * scrX,
+            rectH * scrY,
+            -- W, H
+            rectW, rectH,
+            -- start UV
+            0, 0,
+            -- end UV
+            WIDTH / RT_AMT_X / RENDERTARGET_SIZE_W,
+            HEIGHT / RT_AMT_Y / RENDERTARGET_SIZE_H
+        )
+        render.setMaterial(nil)
+    end
+
+    kcRender._backgroundCol = Color(0, 0, 0, 0)
+    function kcRender.drawScreens()
+        render.setBackgroundColor(kcRender._backgroundCol)
+        kcRender.useFilter()
+        kcRender.loopAllRTs(function(rtID)
+            kcRender.drawScreen(rtID)
+        end)
+    end
+
+    function kcRender.drawUpdate(fn)
+        if kcRender._start and kcRender.setup() then return end
+
+        kcRender.updateTime()
+        kcRender.drawOnRTs(fn)
+    end
+
+    function kcRender.hook(hookType, name, fn)
+        hook.add(hookType, name, function() kcRender.drawUpdate(fn) end)
+    end
+
+    function kcRender.createPixelRender(quotaLimit)
+        local self = pixelRender.createRender(quotaLimit)
+        self.range = {
+            x1 = 0, x2 = WIDTH,
+            y1 = 0, y2 = HEIGHT,
+        }
+
+        self.onDraw = function(self, px, py, pixel, args)
+            local scrX, scrY = args[1], args[2]
+            if not isPixelInScreen(pixel, scrX, scrY) then return true end
+            self:_onDraw(px, py, pixel, scrX, scrY)
+        end
+
+        self._onDraw = function(self, px, py, pixel, scrX, scrY) end
+        function self.setOnDraw(self, fn)
+            self._onDraw = fn
+        end
+
+        return self
+    end
+
+    return kcRender
+end

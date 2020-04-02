@@ -1,0 +1,86 @@
+--@name Mandelbrot v1
+--@shared
+
+--@include ../../../../lib/enum/all.txt
+
+--@include ../../../../lib/link/kewl_link.txt
+--@include ../../../../lib/permissions/kewl_permissions.txt
+
+--@include ../../../lib/render/kewl_render_i/custom.txt
+--@include ../../../lib/draw/all.txt
+
+require("../../../../lib/enum/all.txt")(true)
+
+if SERVER then
+    local kLink = require("../../../../lib/link/kewl_link.txt")
+    kLink.init()
+    kLink.link()
+end
+
+if CLIENT then
+    local kPerm = require("../../../../lib/permissions/kewl_permissions.txt")
+    kPerm.askPerms({
+        title = "Mandelbrot",
+        permissions = {
+            "render.screen",
+        },
+        load = function()
+            local kcRender = require("../../../lib/render/kewl_render_i/custom.txt")()
+            require("../../../lib/draw/all.txt")
+            
+            kcRender._createMaterial = function()
+                local mat_rt = material.create("UnlitGeneric")
+                mat_rt:setInt("$flags", MATERIAL_VAR_VERTEXCOLOR)
+                return mat_rt
+            end
+            local WIDTH, HEIGHT = kcRender.init(2048, 2048)
+            local rtSizeW, rtSizeH = kcRender.getDrawScreenSize()
+            
+            local maxIterations = 1000
+            local cenX, cenY = -0.7453, 0.1127
+            local size = 6.5e-4
+            local minX, maxX, minY, maxY = cenX - size, cenX + size, cenY - size, cenY + size
+            local miX, mxX, miY, mxY
+            function remap( x, t1, t2, s1, s2 )
+                local f = ( x - t1 ) / ( t2 - t1 )
+                local g = f * ( s2 - s1 ) + s1
+                return g;
+            end
+            function drawMandelbrot(i, j)
+                local pa, as, za, b, bs, zb, cnt, clr = {}
+                a = remap( i, 0, WIDTH, minX, maxX )
+                b = remap( j, 0, HEIGHT, minY, maxY )
+                cnt = 0; za = a; zb = b
+                while( cnt < maxIterations ) do
+                    as = a * a - b * b; bs = 2 * a * b
+                    a = za + as; b = zb + bs
+                    if math.abs( a ) + math.abs( b ) > 16 then break end
+                    cnt = cnt + 1
+                end
+                if cnt == maxIterations then clr = 0
+                else clr = remap( cnt, 0, maxIterations, 0, 255 )
+                end
+                
+                return clr, clr, clr, 255
+            end
+            
+            local renderPixels = kcRender.createPixelRender(OWNER and 0.5 or 0.3)
+                renderPixels.loop = false
+                function renderPixels:_onDraw(x, y, pixel, scrX, scrY)
+                    local r, g, b, a = drawMandelbrot(x, y)
+                    draw.drawPixelFastRGBA(x, y, drawMandelbrot(x, y))
+                end
+                function renderPixels:onFinish()
+                    print("finished!")
+                end
+
+            hook.add("render", "draw", function()
+                kcRender.drawScreens()
+            end)
+            kcRender.hook("renderoffscreen", "draw", function(dt, t, scrX, scrY)
+                renderPixels:render({scrX, scrY})
+            end)
+        end,
+        pending = kPerm.drawPendingFloatingKey(),
+    })
+end

@@ -1,0 +1,14 @@
+return function(global)
+    local vals = {
+        NONE = 0,
+        POINT = 1,
+        LINEAR = 2,
+        ANISOTROPIC = 3
+    }
+
+    if global then
+        TEXTFILTER = vals
+    end
+
+    return vals
+end

@@ -1,0 +1,21 @@
+local rayMarscher = {
+    MAX_STEPS = 100,
+    MIN_DIST = 0.01,
+    MAX_DIST = 1000,
+}
+
+rayMarscher.calculate = function() -- override
+
+end
+
+rayMarscher.renderPixel = function(x, y, r, g, b, a) -- override
+    render.setRGBA(r, g, b, a)
+    render.drawRectFast(x, y, 1, 1)
+end
+
+function rayMarscher.render(x, y)
+    local dist = rayMarscher.calculate()
+    rayMarscher.renderPixel()
+end
+
+return rayMarscher

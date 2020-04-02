@@ -1,0 +1,57 @@
+--@name 
+--@shared
+
+--@include ../../../lib/enum/all.txt
+
+--@include ../../../lib/link/kewl_link.txt
+--@include ../../../lib/permissions/kewl_permissions.txt
+
+--@include ../../../lib/render/kewl_render_i/custom.txt
+--@include ../../../lib/draw/all.txt
+
+require("../../../lib/enum/all.txt")(true)
+
+if SERVER then
+    local kLink = require("../../../lib/link/kewl_link.txt")
+    kLink.init()
+    kLink.link()
+end
+
+if CLIENT then
+    local kPerm = require("../../../lib/permissions/kewl_permissions.txt")
+    kPerm.askPerms({
+        title = "Example Script",
+        permissions = {
+            "render.screen",
+            "render.offscreen",
+            "material.create",
+        },
+        load = function()
+            local kcRender = require("../../../lib/render/kewl_render_i/custom.txt")()
+            require("../../../lib/draw/all.txt")
+            
+            local WIDTH, HEIGHT = kcRender.init(2048, 2048)
+            local DRAW_SIZE_W, DRAW_SIZE_H = kcRender.getDrawScreenSize()
+
+            local renderPixels = kcRender.createPixelRender(OWNER and 0.5 or 0.2)
+                renderPixels.loop = false
+                function renderPixels:onStart()
+
+                end
+                function renderPixels:_onDraw(x, y, pixel, scrX, scrY)
+                    draw.drawPixelCol(x, y, Color(360 / (WIDTH + HEIGHT) * (x + y), 1, 1):hsvToRGB())
+                end
+                function renderPixels:onFinish()
+                    print("finished!")
+                end
+
+            hook.add("render", "draw", function()
+                kcRender.drawScreens()
+            end)
+            kcRender.hook("renderoffscreen", "draw", function(dt, t, scrX, scrY)
+                renderPixels:render({scrX, scrY})
+            end)
+        end,
+        pending = kPerm.drawPendingFloatingKey(),
+    })
+end
