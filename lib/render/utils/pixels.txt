@@ -16,7 +16,7 @@ function pRender.createRender(quotaLimit)
     mt.quotaLimit = quotaLimit
     
     mt._setup = true
-    mt.onStart = function(self) end  -- override
+    mt.onSetup = function(self) end  -- override
 
     mt.pause = false
 
@@ -33,11 +33,31 @@ function pRender.createRender(quotaLimit)
     mt.pixel = 0
     mt._pixelAmt = 0
 
+    mt.getPixel = function(self) -- override
+        return self.pixel
+    end
+
+    mt.selectNextPixel = function(self) -- override
+        self.pixel = self.pixel + 1
+    end
+
+    mt.finish = function(self) -- override
+        pixel = 0
+        self:onFinish()
+        self.finished = not self.loop
+        if self.finished then return true end
+    end
+    
+    mt.End = function(self)
+        self:onFinish()
+        self.finished = not self.loop
+    end
+
     function mt.render(self, args)
         if self._setup then
             self._screen_width = (self.range.x2 - self.range.x1)
             self._pixelAmt = self._screen_width * (self.range.y2 - self.range.y1)
-            mt:onStart()
+            self:onSetup()
             self._setup = false
             return
         end
@@ -45,17 +65,16 @@ function pRender.createRender(quotaLimit)
         if self.finished or self.pause then return true end
         
         sf_helper.whileQuota(self.quotaLimit, function()
-            if self.pixel >= self._pixelAmt then
-                self.pixel = 0
-                self:onFinish()
-                self.finished = not self.loop
+            if self:getPixel() >= self._pixelAmt then
+                if self:finish() then return true end
                 if self.finished then return true end
             end
             
-            local px, py = array.translate1Dto2D(self.pixel, self._screen_width)
-            if self:onDraw(px, py, self.pixel, args) then return true end
+            local pixel = self:getPixel()
+            local px, py = array.translate1Dto2D(pixel, self._screen_width)
+            if self:onDraw(px, py, pixel, args) then return true end
             
-            self.pixel = self.pixel + 1
+            self:selectNextPixel()
         end)
     end
     

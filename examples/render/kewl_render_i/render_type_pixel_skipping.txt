@@ -30,22 +30,46 @@ if CLIENT then
             local kcRender = require("../../../lib/render/kewl_render_i/custom.txt")()
             require("../../../lib/draw/all.txt")
             
-            local WIDTH, HEIGHT = kcRender.init(2048, 2048)
+            kcRender._createMaterial = function()
+                local mat_rt = material.create("UnlitGeneric")
+                mat_rt:setInt("$flags", MATERIAL_VAR_VERTEXCOLOR)
+                return mat_rt
+            end
+            local WIDTH, HEIGHT = kcRender.init(1024, 1024)
             local DRAW_SIZE_W, DRAW_SIZE_H = kcRender.getDrawScreenSize()
-            local SCREENS_X, SCREENS_Y = kcRender.getScreenAmt()
 
             local renderPixels = kcRender.createPixelRender(OWNER and 0.2 or 0.1)
                 renderPixels.loop = false
-                function renderPixels:onSetup()
-                    
-                end
                 function renderPixels:_onDraw(x, y, pixel, scrX, scrY)
                     draw.drawPixelCol(x, y, Color(360 / (WIDTH + HEIGHT) * (x + y), 1, 1):hsvToRGB())
                 end
                 function renderPixels:onFinish()
                     print("finished!")
                 end
-
+                function renderPixels:onSetup()
+                    self.skip = 8
+                    self.pixels_done = {}
+                end
+                renderPixels.getPixel = function(self)
+                    self.pixels_done[self.pixel] = true
+                    return self.pixel
+                end
+                renderPixels.selectNextPixel = function(self)
+                    repeat
+                        self.pixel = self.pixel + self.skip
+                    until not self.pixels_done[self.pixel]
+                end
+                renderPixels.finish = function(self)
+                    self.skip = self.skip - 1
+                    self.pixel = self.skip
+                    if self.skip == 0 then
+                        self:onFinish()
+                        self.finished = not self.loop
+                        if self.finished then return true end
+                    end
+                end
+            
+            kcRender.preDrawScreens = function() end
             hook.add("render", "draw", function()
                 kcRender.drawScreens()
             end)

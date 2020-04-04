@@ -64,7 +64,7 @@ return function(_SCREEN_W, _SCREEN_H, _RT_W, _RT_H, _RT_NAME_IND)
     function kcRender.getFilterMag(filter) return FILTER_MAG end
     function kcRender.getFilterMin(filter) return FILTER_MIN end
 
-    function kcRender.getRTamt() return RT_AMT_X, RT_AMT_Y end
+    function kcRender.getScreenAmt() return RT_AMT_X, RT_AMT_Y end
     function kcRender.getDrawScreenSize() return SCR_WIDTH, SCR_HEIGHT end
     function kcRender.getRTName(rtID) return RT_NAME_INDEX .. rtID end
 
@@ -191,13 +191,20 @@ return function(_SCREEN_W, _SCREEN_H, _RT_W, _RT_H, _RT_NAME_IND)
         render.setMaterial(nil)
     end
 
-    kcRender._backgroundCol = Color(0, 0, 0, 0)
+    local col_alpha = Color(0, 0, 0, 0)
+    kcRender.preDrawScreens = function()
+        render.setBackgroundColor(col_alpha)
+    end
+
+    kcRender.postDrawScreens = function() end -- override
+
     function kcRender.drawScreens()
-        render.setBackgroundColor(kcRender._backgroundCol)
+        kcRender.preDrawScreens()
         kcRender.useFilter()
         kcRender.loopAllRTs(function(rtID)
             kcRender.drawScreen(rtID)
         end)
+        kcRender.postDrawScreens()
     end
 
     function kcRender.drawUpdate(fn)
