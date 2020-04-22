@@ -1,14 +1,11 @@
-return function(global)
-    local vals = {
+--@include ../utils/enums.txt
+local enum = require("../utils/enums.txt")
+
+return enum.create({
+    "TEXTFILTER", {
         NONE = 0,
         POINT = 1,
         LINEAR = 2,
-        ANISOTROPIC = 3
-    }
-
-    if global then
-        TEXTFILTER = vals
-    end
-
-    return vals
-end
+        ANISOTROPIC = 3,
+    },
+}, ENUMS_GLOBAL)

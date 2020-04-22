@@ -1,14 +1,16 @@
 local kPerms = {}
 
-function kPerms.askPerms(tbl)
+function kPerms.askPerms(tbl, forceAsk)
+    forceAsk = forceAsk == nil and false or forceAsk
+
     if not type(tbl) == "table" then
         error("askPerms, expected table got " .. type(tbl))
     end
     
     local title = tbl.title or "Permissions needed"
     local permIDs = tbl.permissions or {}
-    local gotPermsFn = tbl.load or function() end
-    local pendingFn = tbl.pending or kPerms.drawPendingSimple
+    local load = tbl.onLoad or function() end
+    local pending = tbl.onPending or kPerms.drawPendingSimple
     
     local has = true
     for _, permID in pairs(permIDs) do
@@ -18,18 +20,18 @@ function kPerms.askPerms(tbl)
         end
     end
     
-    if has then
-        gotPermsFn()
+    if has and not forceAsk then
+        load()
     else
         setupPermissionRequest(permIDs, title, true)
         
-        pendingFn.onPending()
+        pending.onPending()
         
         hook.add("permissionrequest", "perms", function()
             if permissionRequestSatisfied() then
                 hook.remove("permissionrequest", "perms")
-                pendingFn.onLoad()
-                gotPermsFn()
+                pending.onLoad()
+                load()
             end
         end)
     end

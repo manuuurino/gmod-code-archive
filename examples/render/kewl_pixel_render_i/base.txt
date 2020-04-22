@@ -1,0 +1,71 @@
+--@name 
+--@shared
+
+--@include ../../../lib/enum/all.txt
+
+--@include ../../../lib/link/kewl_link.txt
+
+--@include ../../../lib/permissions/kewl_permissions.txt
+--@include ../../../lib/render/kewl_pixel_render_i/main.txt
+--@include ../../../lib/draw/all.txt
+--@include ../../../lib/utils/arrays.txt
+--@include ../../../lib/utils/rendertarget.txt
+
+ENUMS_GLOBAL = true
+require("../../../lib/enum/all.txt")
+
+if SERVER then
+    local kLink = require("../../../lib/link/kewl_link.txt")
+    kLink.init()
+    kLink.link()
+end
+
+if CLIENT then
+    local kPerm = require("../../../lib/permissions/kewl_permissions.txt")
+    kPerm.askPerms({
+        title = "Example Script",
+        permissions = {
+            "render.screen",
+            "render.offscreen",
+            "material.create",
+        },
+        onLoad = function()
+            local kpRender = require("../../../lib/render/kewl_pixel_render_i/main.txt")
+            local array = require("../../../lib/utils/arrays.txt")
+            local rendertarget = require("../../../lib/utils/rendertarget.txt")
+            require("../../../lib/draw/all.txt")
+            
+            rendertarget.init(RENDERTARGET_NON_ALPHA, "UnlitGeneric")
+            rendertarget.create("canvas")
+
+            local renderPixels = kpRender.createRender(
+                OWNER and 0.85 or 0.05,
+                KPR_MANAGE_PIXELS_COUNT, KPR_HANDLE_PIXEL_PIXEL, KPR_HANDLE_DRAW_PIXEL_FIXED, KPR_MANAGE_WORK_CLIENT,
+                0, RENDERTARGET_SIZE_W, 0, RENDERTARGET_SIZE_H
+            )
+                renderPixels.loop = false
+                function renderPixels:onDraw(x, y)
+                    return 255, 255, 255, 255, false
+                end
+                function renderPixels:onEnd()
+                    print("finished!")
+                end
+
+            hook.add("render", "draw", function()
+                rendertarget.push("canvas")
+                    renderPixels:render()
+                rendertarget.pop()
+
+                render.setMaterial(rendertarget.setTexture("canvas"))
+                render.setRGBA(255, 255, 255, 255)
+                render.drawTexturedRectUV(
+                    0, 0,
+                    SCREEN_SIZE_W, SCREEN_SIZE_H,
+                    0, 0,
+                    1, 1
+                )
+            end)
+        end,
+        onPending = kPerm.drawPendingFloatingKey(),
+    })
+end

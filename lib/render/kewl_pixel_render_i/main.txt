@@ -1,0 +1,242 @@
+--@include ../../enum/all.txt
+--@include ../../utils/enums.txt
+
+--@include ../../utils/sf_helper.txt
+--@include ../../utils/arrays.txt
+
+require("../../enum/all.txt")
+local enum = require("../../utils/enums.txt")
+
+local sf_helper = require("../../utils/sf_helper.txt")
+local array = require("../../utils/arrays.txt")
+
+local MANAGE_PIXELS = enum.create({
+    "KPR_MANAGE_PIXELS_COUNT", function(self)
+        self._setup_pixels = function(self)
+            local w, h = self:getRangeSize()
+            self.width = w 
+            self.height = h
+
+            self.curPixel = 0
+            self.pixelsAmount = w * h
+        end
+
+        self._nextPixel = function(self)
+            self.curPixel = self.curPixel + 1
+        end
+
+        self.getPixel2D = function(self)
+            return array.translate1Dto2D(self.curPixel, self.width)
+        end
+
+        self.getPixel1D = function(self)
+            return self.curPixel
+        end
+
+        self.check_finished = function(self)
+            return self.curPixel >= self.pixelsAmount
+        end
+    end,
+    "KPR_MANAGE_PIXELS_SKIPPING", nil,
+    "KPR_MANAGE_PIXELS_CENTER_COUNT", nil,
+    "KPR_MANAGE_PIXELS_CENTER_SKIPPING", nil,
+    "KPR_MANAGE_PIXELS_INVERTED_CENTER_COUNT", nil,
+    "KPR_MANAGE_PIXELS_INVERTED_CENTER_SKIPPING", nil,
+}, ENUMS_GLOBAL)
+
+local HANDLE_PIXEL_ = enum.create({
+    "KPR_HANDLE_PIXEL_PIXEL", function(self)
+        self._draw = function(self)
+            local x, y = self:getPixel2D()
+            if self:_drawPixel(x, y, self:getPixel1D()) then return true end
+        end
+
+        self._finish_pixel = self._nextPixel
+
+        self._finish = function(self)
+            pixel = 0
+            self:_end()
+        end
+
+        self._end = function(self)
+            self.flag_finished = not self.loop
+        end
+    end,
+    "KPR_HANDLE_PIXEL_CHUNKS", nil,
+    "KPR_HANDLE_PIXEL_CHUNKS_SUBDIVIDE", nil,
+}, ENUMS_GLOBAL)
+
+local HANDLE_DRAW_ = enum.create({
+    "KPR_HANDLE_DRAW_PIXEL_FIXED", function(self)
+        self._drawPixel = function(self, x, y, pixel)
+            local r, g, b, a, skip = self:onDraw(x, y, pixel)
+            if skip then return true end
+            render.setRGBA(r, g, b, a)
+            render.drawRectFast(x, y, 1, 1)
+        end
+    end,
+    "KPR_HANDLE_DRAW_PIXEL_SIZE", function(self)
+        self._drawPixel = function(self, x, y, pixel)
+            local r, g, b, a, w, h, skip = self:onDraw(x, y, pixel)
+            if skip then return true end
+            render.setRGBA(r, g, b, a)
+            render.drawRectFast(x, y, self.pixel_width, self.pixel_height)
+        end
+    end,
+    "KPR_HANDLE_DRAW_CUSTOM", function(self)
+        self._drawPixel = function(self, x, y, pixel)
+            if self:onDraw(x, y, pixel) then return true end
+        end
+    end,
+}, ENUMS_GLOBAL)
+
+local MANAGE_WORK_ = enum.create({
+    "KPR_MANAGE_WORK_CLIENT", function(self)
+        self._setup = function(self)
+            self:_setup_pixels()
+        end
+    end,
+    "KPR_MANAGE_WORK_SHARE", nil,
+    "KPR_MANAGE_WORK_CLIENT_THREADING", nil,
+}, ENUMS_GLOBAL)
+
+local pRender = {}
+
+function pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
+    local self = {}
+
+    -- vars
+    self.quotaLimit = quotaLimit
+    self.range = {
+        x1 = startx or 0, x2 = endx or SCREEN_SIZE_W,
+        y1 = starty or 0, y2 = endy or SCREEN_SIZE_H,
+    }
+    
+    self.flag_setup = true
+    self.onSetup = function(self) end
+
+    self.flag_pause = false
+    self.onDraw = function(self, px, py, pixel) end
+    
+    self.flag_finish = false
+    self.onFinish = function(self) end
+    
+    self.loop = false
+    self.flag_end = false
+    self.onEnd = function(self) end
+
+    -- functions
+    function self.setRangeCords(self, x1, y1, x2, y2)
+        self.range = {
+            x1 = x1, x2 = x2,
+            y1 = y1, y2 = y2,
+        }
+    end
+    function self.setRangePos(self, x, y)
+        self.range.x1 = self.range.x + x
+        self.range.y1 = self.range.y + y
+        local w, h = self:getRangeSize()
+        self:setRangeSize(w, h)
+    end
+    function self.setRangeSize(self, width, height)
+        self.range.x2 = self.range.x + width
+        self.range.y2 = self.range.y + height
+    end
+    function self.getRangeSize(self)
+        return self.range.x2 - self.range.x1, self.range.y2 - self.range.y1
+    end
+
+    -- important functions
+    self.getPixel = function(self) end
+    self._nextPixel = function(self) end
+    self.check_finished = function(self) end
+    
+    self._setup = function(self) end
+    self._draw = function(self) end
+    self._finish = function(self) end
+    self._finish_pixel = function(self) end
+    self._end = function(self) end
+
+    --self.loopFn = sf_helper.whileQuota
+    self.loopFn = sf_helper.doUntilQuota
+
+    function self.render(self)
+        if self.flag_setup then
+            self:_setup()
+            self:onSetup()
+            self.flag_setup = false
+            return
+        end
+
+        if self.flag_finished or self.flag_pause then return true end
+        
+        self.loopFn(self.quotaLimit, function()
+            if self:check_finished() then
+                if self:_finish() or self:onFinish() or self.flag_finished then return true end
+            end
+            
+            if self:_draw() then return true end
+
+            if self:_finish_pixel() then return true end
+        end)
+    end
+    
+    return setmetatable(self, {})
+end
+
+function pRender.createRender(quotaLimit, managePixels, handlePixels, handleDraw, manageWork, startx, endx, starty, endy)
+    local self = pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
+
+    managePixels(self)
+    handlePixels(self)
+    handleDraw(self)
+    manageWork(self)
+
+    return self
+end
+
+return pRender
+
+
+--[[
+    function renderPixels:onSetup()
+        self.x = 0
+        self.y = 0
+        self.w = WIDTH
+        self.skip = math.max(DRAW_SIZE_W, DRAW_SIZE_H)
+        self.lskip = self.skip
+        self.skipStep = 2
+        
+        -- needed for progressbar
+        self.pass = 0
+        self.passes = (function()
+            local function rec(v, n)
+                if v <= 1 then return n end
+                return rec(math.floor(v / self.skipStep) , n + 1)
+            end
+            return rec(self.skip, 0)
+        end)()
+    end
+    renderPixels.getPixel = function(self)
+        return array.translate2Dto1D(self.x, self.y, self.w)
+    end
+    renderPixels.selectNextPixel = function(self)
+        repeat
+            self.x = self.x + self.skip
+            if self.x > self.w then
+                self.x = 0
+                self.y = self.y + self.skip
+            end
+        until self.skip == self.lskip or self.x % self.lskip ~= 0 or self.y % self.lskip ~= 0
+    end
+    renderPixels.finish = function(self)
+        self.lskip = self.skip
+        self.skip = math.floor(self.skip / self.skipStep)
+        self.x = 0
+        self.y = 0
+        self.pass = self.pass + 1 -- progressbar
+        if self.skip < 1 then
+            self:End()
+        end
+    end
+]]

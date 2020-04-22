@@ -1,0 +1,22 @@
+local pointer = {}
+
+function pointer.make(v)
+    local mt = {__type = "pointer"}
+    local val = v
+    
+    function mt.__index(self, k)
+        if k == "deref" then
+            return val
+        end
+    end
+    
+    function mt.__newindex(self, k, v)
+        if k == "deref" then
+            val = v
+        end
+    end
+    
+    return setmetatable({}, mt)
+end
+
+return pointer

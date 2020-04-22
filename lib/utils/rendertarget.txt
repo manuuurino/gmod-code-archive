@@ -1,8 +1,57 @@
+--@include ./enums.txt
+--@include ../enum/material.txt
+local enum = require("./enums.txt")
+local lenum_material = require("../enum/material.txt")
+
 local rendertarget = {}
 local rtStack = {}
 
+local lenum = enum.create({
+    "RENDERTARGET_NONE",
+        0,
+    "RENDERTARGET_NON_ALPHA",
+        lenum_material.MATERIAL_VAR_VERTEXCOLOR +
+        lenum_material.MATERIAL_VAR_NOCULL,
+    "RENDERTARGET_ALPHA",
+        lenum_material.MATERIAL_VAR_VERTEXCOLOR +
+        lenum_material.MATERIAL_VAR_NOCULL +
+        lenum_material.MATERIAL_VAR_ALPHATEST,
+}, ENUMS_GLOBAL)
+
+rendertarget._createMaterial = function(shader) -- override
+    local mat_rt = material.create(shader)
+    return mat_rt
+end
+
+rendertarget._materialSelectRT = function(mat, id) -- override
+    mat:setTextureRenderTarget("$basetexture", id)
+end
+
+rendertarget._create = function(id) -- override
+    render.createRenderTarget(id)
+end
+
 rendertarget._selection = function(id) -- override
     render.selectRenderTarget(id)
+end
+
+function rendertarget.init(flag_type, shader)
+    local mat = rendertarget._createMaterial(shader or "UnlitGeneric")
+    mat:setInt("$flags", flag_type or lenum.RENDERTARGET_NON_ALPHA)
+    rendertarget.mat_rt = mat
+end
+
+function rendertarget.getMaterial()
+    return rendertarget.mat_rt
+end
+
+function rendertarget.setTexture(id)
+    rendertarget._materialSelectRT(rendertarget.mat_rt, id)
+    return rendertarget.getMaterial()
+end
+
+function rendertarget.create(id)
+    return rendertarget._create(id)
 end
 
 function rendertarget.get()
@@ -19,4 +68,4 @@ function rendertarget.pop()
     rendertarget._selection(rendertarget.get())
 end
 
-return rendertarget
+return rendertarget, lenum

@@ -1,14 +1,19 @@
-return function(global)
-    local owner = owner() == player()
-    local not_owner = not owner
+--@include ../utils/enums.txt
+local enum = require("../utils/enums.txt")
 
-    if global then
-        OWNER = owner
-        NOT_OWNER = notowner
-    end
-
-    return {
-        OWNER = owner,
-        NOT_OWNER = notowner,
-    }
-end
+return enum.create({
+    "OWNER", owner() == player(),
+    "SHADERS", {
+        ["UNLITGENERIC"]     = "UnlitGeneric",
+        ["VERTEXLITGENERIC"] = "VertexLitGeneric",
+        ["REFRACT_DX90"]     = "Refract_DX90",
+        ["WATER_DX90"]       = "Water_DX90",
+        ["SKY_DX9"]          = "Sky_DX9",
+        ["GMODSCREENSPACE"]  = "gmodscreenspace",
+        ["MODULATE_DX9"]     = "Modulate_DX9",
+    },
+    "SCREEN_SIZE_W", 512,
+    "SCREEN_SIZE_H", 512,
+    "RENDERTARGET_SIZE_W", 1024,
+    "RENDERTARGET_SIZE_H", 1024,
+}, ENUMS_GLOBAL)

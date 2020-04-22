@@ -41,14 +41,29 @@ if CLIENT then
             local renderPixels = kcRender.createPixelRender(OWNER and 0.2 or 0.1)
                 renderPixels.loop = false
                 function renderPixels:_onDraw(x, y, pixel, scrX, scrY)
-                    draw.drawPixelCol(x, y, Color(360 / (WIDTH + HEIGHT) * (x + y), 1, 1):hsvToRGB())
+                    --local a = (x + y) / (WIDTH + HEIGHT)
+                    --draw.drawPixelCol(x, y, Color((pixel + y) % 2 == 0 and 360 * a or 360 - 360 * a, 1, 1):hsvToRGB())
+                    draw.drawPixelCol(x, y, Color(360 * (x + y) / (WIDTH + HEIGHT), 1, 1):hsvToRGB())
+                    --[[
+                    local r, g, b = 0, 0 ,0
+                    local avrCnt = 16
+                    for i = 1, avrCnt do
+                        r = r + math.random(0, 255)
+                        g = g + math.random(0, 255)
+                        b = b + math.random(0, 255)
+                    end
+                    r = r / avrCnt
+                    g = g / avrCnt
+                    b = b / avrCnt
+                    draw.drawPixelFastRGBA(x, y, r, g, b, 255)--]]
                 end
                 function renderPixels:onFinish()
                     print("finished!")
                 end
                 function renderPixels:onSetup()
-                    self.skip = 8
+                    self.skip = math.max(WIDTH, HEIGHT)
                     self.pixels_done = {}
+                    self.sskip = self.skip -- needed for progressbar
                 end
                 renderPixels.getPixel = function(self)
                     self.pixels_done[self.pixel] = true
@@ -69,9 +84,47 @@ if CLIENT then
                     end
                 end
             
+            function progressBar(Render)
+                if Render._setup then return end
+                if Render.finished then return end
+                
+                local subProg = Render:getPixel() / Render._pixelAmt
+                local prog = 1 - Render.skip / Render.sskip
+
+                render.setRGBA(35, 35, 35, 255)
+                local thickness = 8
+                local w, h = SCREEN_SIZE_W - thickness * 2, thickness
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2, SCREEN_SIZE_H - h * 2,
+                    w, h)
+                render.setRGBA(25, 25, 25, 255)
+                local gapX, gapY = 2, 2
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2 + gapX, SCREEN_SIZE_H - h * 2 + gapY,
+                    w - gapX * 2, h - gapY * 2)
+                render.setRGBA(150, 255, 50, 255)
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2 + gapX, SCREEN_SIZE_H - h * 2 + gapY,
+                    (w - gapX * 2) * prog, h - gapY * 2)
+                
+                render.setRGBA(35, 35, 35, 255)
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2, SCREEN_SIZE_H - h * 2 - h - gapY,
+                    w, h)
+                render.setRGBA(25, 25, 25, 255)
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2 + gapX, SCREEN_SIZE_H - h * 2 + gapY - h - gapY,
+                    w - gapX * 2, h - gapY * 2)
+                render.setRGBA(255, 150, 50, 255)
+                render.drawRectFast(
+                    SCREEN_SIZE_W / 2 - w / 2 + gapX, SCREEN_SIZE_H - h * 2 + gapY - h - gapY,
+                    (w - gapX * 2) * subProg, h - gapY * 2)
+            end
+            
             kcRender.preDrawScreens = function() end
             hook.add("render", "draw", function()
                 kcRender.drawScreens()
+                progressBar(renderPixels)
             end)
             
             kcRender.hook("renderoffscreen", "draw", function(dt, t, scrX, scrY)

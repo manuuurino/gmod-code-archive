@@ -1,7 +1,7 @@
 local sf_helper = {}
 
 function sf_helper.isQuotaSafe(range)
-    return quotaAverage() < quotaMax() * range
+    return math.max(quotaAverage(), quotaUsed()) < quotaMax() * range
 end
 
 function sf_helper.doUntilQuota(limit, fn)

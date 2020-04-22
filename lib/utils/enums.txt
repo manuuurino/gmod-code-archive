@@ -1,0 +1,31 @@
+local enum = {}
+
+function enum.create(tbl, global)
+    global = global == nil and true or global
+    local lenum = {}
+    local ind_val = 0
+
+    for i = 1, #tbl, 2 do
+        local key = tbl[i]
+        local val = tbl[i + 1]
+        
+        if type(val) == "number" then
+            ind_val = tbl[i + 1]
+            val = tbl[i + 1]
+        elseif val == nil then
+            ind_val = ind_val + 1
+            val = ind_val
+        else
+            val = tbl[i + 1]
+        end
+
+        lenum[key] = val
+        if global then
+            _G[key] = val
+        end
+    end
+
+    return lenum
+end
+
+return enum

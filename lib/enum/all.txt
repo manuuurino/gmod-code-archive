@@ -1,21 +1,11 @@
 --@include ./textfilter.txt
---@include ./rendertarget.txt
---@include ./screen.txt
 --@include ./sf.txt
 --@include ./material.txt
 
-local textfilter = require("./textfilter.txt")
-local rendertarget = require("./rendertarget.txt")
-local screen = require("./screen.txt")
-local sf = require("./sf.txt")
-local matenum = require("./material.txt")
+ENUMS_GLOBAL = ENUMS_GLOBAL == nil and true or ENUMS_GLOBAL
 
-return function(global)
-    return {
-        TEXTFILTER = textfilter(global),
-        RENDERTARGET = rendertarget(global),
-        SCREEN = screen(global),
-        SF = sf(global),
-        matenum = matenum(global),
-    }
-end
+return {
+    TEXTFILTER   = require("./textfilter.txt"),
+    SF           = require("./sf.txt"),
+    MATERIAL     = require("./material.txt"),
+}
