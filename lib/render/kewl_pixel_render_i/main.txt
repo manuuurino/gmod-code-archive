@@ -34,7 +34,7 @@ local MANAGE_PIXELS = enum.create({
         end
 
         self.check_finished = function(self)
-            return self.curPixel >= self.pixelsAmount
+            return self.curPixel > self.pixelsAmount
         end
     end,
     "KPR_MANAGE_PIXELS_SKIPPING", nil,
@@ -59,7 +59,7 @@ local HANDLE_PIXEL_ = enum.create({
         end
 
         self._end = function(self)
-            self.flag_finished = not self.loop
+            self.flag_end = not self.flag_loop
         end
     end,
     "KPR_HANDLE_PIXEL_CHUNKS", nil,
@@ -77,7 +77,7 @@ local HANDLE_DRAW_ = enum.create({
     end,
     "KPR_HANDLE_DRAW_PIXEL_SIZE", function(self)
         self._drawPixel = function(self, x, y, pixel)
-            local r, g, b, a, w, h, skip = self:onDraw(x, y, pixel)
+            local r, g, b, a, skip = self:onDraw(x, y, pixel)
             if skip then return true end
             render.setRGBA(r, g, b, a)
             render.drawRectFast(x, y, self.pixel_width, self.pixel_height)
@@ -114,14 +114,15 @@ function pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
     
     self.flag_setup = true
     self.onSetup = function(self) end
-
+    
     self.flag_pause = false
+    self.onCallDraw = function(self) end
+    self.onEndCallDraw = function(self) end
     self.onDraw = function(self, px, py, pixel) end
     
-    self.flag_finish = false
+    self.flag_loop = false
     self.onFinish = function(self) end
     
-    self.loop = false
     self.flag_end = false
     self.onEnd = function(self) end
 
@@ -152,7 +153,13 @@ function pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
     self.check_finished = function(self) end
     
     self._setup = function(self) end
+
+    self._calldraw = function(self)
+        if self.flag_finished or self.flag_pause then return true end
+    end
+    self._callEndDraw = function(self) end
     self._draw = function(self) end
+
     self._finish = function(self) end
     self._finish_pixel = function(self) end
     self._end = function(self) end
@@ -161,24 +168,34 @@ function pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
     self.loopFn = sf_helper.doUntilQuota
 
     function self.render(self)
+        if self.flag_end then return true end
+
         if self.flag_setup then
             self:_setup()
             self:onSetup()
             self.flag_setup = false
             return
         end
-
-        if self.flag_finished or self.flag_pause then return true end
         
+        if self:_calldraw() or self:onCallDraw() then return end
+
         self.loopFn(self.quotaLimit, function()
             if self:check_finished() then
-                if self:_finish() or self:onFinish() or self.flag_finished then return true end
+                if self:_finish() or self:onFinish() then return true end
             end
             
             if self:_draw() then return true end
 
             if self:_finish_pixel() then return true end
         end)
+
+        if self:_callEndDraw() or self:onCallEndDraw() then return true end
+
+        if self.flag_end then
+            self:_end()
+            self:onEnd()
+            return true
+        end
     end
     
     return setmetatable(self, {})
@@ -186,6 +203,8 @@ end
 
 function pRender.createRender(quotaLimit, managePixels, handlePixels, handleDraw, manageWork, startx, endx, starty, endy)
     local self = pRender.createBaseRender(quotaLimit, startx, endx, starty, endy)
+
+    local managePixels, handlePixels, handleDraw, manageWork = managePixels, handlePixels, handleDraw, manageWork
 
     managePixels(self)
     handlePixels(self)

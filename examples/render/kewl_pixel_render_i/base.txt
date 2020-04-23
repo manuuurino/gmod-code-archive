@@ -43,19 +43,30 @@ if CLIENT then
                 KPR_MANAGE_PIXELS_COUNT, KPR_HANDLE_PIXEL_PIXEL, KPR_HANDLE_DRAW_PIXEL_FIXED, KPR_MANAGE_WORK_CLIENT,
                 0, RENDERTARGET_SIZE_W, 0, RENDERTARGET_SIZE_H
             )
-                renderPixels.loop = false
+                function renderPixels:onSetup()
+                    self.flag_loop = false
+                    self.total = 0
+                    self.totalc = 0
+                end
+                function renderPixels:onCallDraw()
+                    self.lastPixel = self.curPixel
+                end
+                function renderPixels:onCallEndDraw()
+                    self.total = self.total + self.curPixel - self.lastPixel
+                    self.totalc = self.totalc + 1
+                end
                 function renderPixels:onDraw(x, y)
                     return 255, 255, 255, 255, false
                 end
                 function renderPixels:onEnd()
-                    print("finished!")
+                    print("finished! PPF avg : " .. self.total / self.totalc)
                 end
-
+                
             hook.add("render", "draw", function()
                 rendertarget.push("canvas")
                     renderPixels:render()
                 rendertarget.pop()
-
+                
                 render.setMaterial(rendertarget.setTexture("canvas"))
                 render.setRGBA(255, 255, 255, 255)
                 render.drawTexturedRectUV(
