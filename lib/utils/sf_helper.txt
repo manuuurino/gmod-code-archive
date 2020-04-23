@@ -5,11 +5,19 @@ function sf_helper.isQuotaSafe(range)
 end
 
 function sf_helper.doUntilQuota(limit, fn)
-    while (not fn()) and sf_helper.isQuotaSafe(limit) do end 
+    repeat
+        if fn() then 
+            return
+        end
+    until not sf_helper.isQuotaSafe(limit) 
 end
 
 function sf_helper.whileQuota(limit, fn)
-    while sf_helper.isQuotaSafe(limit) and not fn() do end 
+    while sf_helper.isQuotaSafe(limit) do
+        if fn() then
+            return
+        end
+    end 
 end
 
 return sf_helper

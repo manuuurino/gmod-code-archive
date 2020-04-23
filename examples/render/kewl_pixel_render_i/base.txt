@@ -35,6 +35,8 @@ if CLIENT then
             local rendertarget = require("../../../lib/utils/rendertarget.txt")
             require("../../../lib/draw/all.txt")
             
+            local render = render
+            
             rendertarget.init(RENDERTARGET_NON_ALPHA, "UnlitGeneric")
             rendertarget.create("canvas")
 
@@ -47,16 +49,18 @@ if CLIENT then
                     self.flag_loop = false
                     self.total = 0
                     self.totalc = 0
+                    self.pixeldone = 0
                 end
                 function renderPixels:onCallDraw()
-                    self.lastPixel = self.curPixel
+                    self.lastPixel = self.pixeldone
                 end
                 function renderPixels:onCallEndDraw()
-                    self.total = self.total + self.curPixel - self.lastPixel
+                    self.total = self.total + self.pixeldone - self.lastPixel
                     self.totalc = self.totalc + 1
                 end
                 function renderPixels:onDraw(x, y)
-                    return 255, 255, 255, 255, false
+                    self.pixeldone = self.pixeldone + 1
+                    return 255, 255, 255, 255
                 end
                 function renderPixels:onEnd()
                     print("finished! PPF avg : " .. self.total / self.totalc)

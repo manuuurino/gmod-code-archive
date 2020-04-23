@@ -10,31 +10,40 @@ local enum = require("../../utils/enums.txt")
 local sf_helper = require("../../utils/sf_helper.txt")
 local array = require("../../utils/arrays.txt")
 
+local render = render
+
 local MANAGE_PIXELS = enum.create({
     "KPR_MANAGE_PIXELS_COUNT", function(self)
         self._setup_pixels = function(self)
-            local w, h = self:getRangeSize()
-            self.width = w 
-            self.height = h
+            self.width, self.height = self:getRangeSize()
+            self.curX = 0
+            self.curY = 0
 
-            self.curPixel = 0
-            self.pixelsAmount = w * h
+            self.flag_overshoot = false
         end
 
         self._nextPixel = function(self)
-            self.curPixel = self.curPixel + 1
+            self.curX = self.curX + 1 
+            if self.curX > self.width then
+                self.curY = self.curY + 1
+                self.curX = 0
+                if self.curY > self.height then
+                    self.curY = 0
+                    self.flag_overshoot = true
+                end
+            end
         end
 
         self.getPixel2D = function(self)
-            return array.translate1Dto2D(self.curPixel, self.width)
+            return self.curX, self.curY
         end
 
         self.getPixel1D = function(self)
-            return self.curPixel
+            return arrays.translate2Dto1D(self.curX, self.curY, self.width)
         end
 
         self.check_finished = function(self)
-            return self.curPixel > self.pixelsAmount
+            return self.flag_overshoot
         end
     end,
     "KPR_MANAGE_PIXELS_SKIPPING", nil,
@@ -47,19 +56,20 @@ local MANAGE_PIXELS = enum.create({
 local HANDLE_PIXEL_ = enum.create({
     "KPR_HANDLE_PIXEL_PIXEL", function(self)
         self._draw = function(self)
-            local x, y = self:getPixel2D()
-            if self:_drawPixel(x, y, self:getPixel1D()) then return true end
+            if self:_drawPixel(self:getPixel2D()) then return true end
         end
 
-        self._finish_pixel = self._nextPixel
+        self._finish_pixel = function(self)
+            self:_nextPixel()
+        end
 
         self._finish = function(self)
-            pixel = 0
-            self:_end()
-        end
-
-        self._end = function(self)
-            self.flag_end = not self.flag_loop
+            self.curX = 0
+            self.curY = 0
+            if not self.flag_loop then
+                self.flag_end = true
+                self:_end()
+            end
         end
     end,
     "KPR_HANDLE_PIXEL_CHUNKS", nil,
@@ -68,24 +78,24 @@ local HANDLE_PIXEL_ = enum.create({
 
 local HANDLE_DRAW_ = enum.create({
     "KPR_HANDLE_DRAW_PIXEL_FIXED", function(self)
-        self._drawPixel = function(self, x, y, pixel)
-            local r, g, b, a, skip = self:onDraw(x, y, pixel)
+        self._drawPixel = function(self, x, y)
+            local r, g, b, a, skip = self:onDraw(x, y)
             if skip then return true end
             render.setRGBA(r, g, b, a)
             render.drawRectFast(x, y, 1, 1)
         end
     end,
     "KPR_HANDLE_DRAW_PIXEL_SIZE", function(self)
-        self._drawPixel = function(self, x, y, pixel)
-            local r, g, b, a, skip = self:onDraw(x, y, pixel)
+        self._drawPixel = function(self, x, y)
+            local r, g, b, a, skip = self:onDraw(x, y)
             if skip then return true end
             render.setRGBA(r, g, b, a)
             render.drawRectFast(x, y, self.pixel_width, self.pixel_height)
         end
     end,
     "KPR_HANDLE_DRAW_CUSTOM", function(self)
-        self._drawPixel = function(self, x, y, pixel)
-            if self:onDraw(x, y, pixel) then return true end
+        self._drawPixel = function(self, x, y)
+            self:onDraw(x, y)
         end
     end,
 }, ENUMS_GLOBAL)
